@@ -8,5 +8,3 @@ pluginManagement {
 }
 
 rootProject.name = "ktor-graphql"
-
-include("ktor-graphql-ws")

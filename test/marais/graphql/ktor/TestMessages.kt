@@ -1,4 +1,4 @@
-package marais.graphql.ktor.ws
+package marais.graphql.ktor
 
 import kotlinx.serialization.json.Json
 import kotlin.test.Test

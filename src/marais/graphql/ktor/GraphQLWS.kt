@@ -1,4 +1,4 @@
-package marais.graphql.ktor.ws
+package marais.graphql.ktor
 
 import io.ktor.application.*
 import io.ktor.http.cio.websocket.*
@@ -6,7 +6,6 @@ import io.ktor.routing.*
 import io.ktor.util.*
 import io.ktor.websocket.*
 import kotlinx.serialization.json.Json
-import marais.graphql.ktor.GraphQLFeature
 
 class GraphQLWS(private val conf: Configuration) {
 
