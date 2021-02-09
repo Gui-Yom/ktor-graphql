@@ -1,5 +1,6 @@
-package marais.graphql.ktor
+package marais.graphql.ktor.types
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -14,15 +15,15 @@ This is required to correctly encode 'type' discriminator.
 sealed class Message {
     @Serializable
     @SerialName("connection_init")
-    data class ConnectionInit(val payload: Map<String, String>?) : Message()
+    data class ConnectionInit(val payload: Map<String, @Contextual Any>?) : Message()
 
     @Serializable
     @SerialName("connection_ack")
-    data class ConnectionAck(val payload: Map<String, String>?) : Message()
+    data class ConnectionAck(val payload: Map<String, @Contextual Any>?) : Message()
 
     @Serializable
     @SerialName("subscribe")
-    data class Subscribe(val id: ID, val payload: SubscribePayload) : Message()
+    data class Subscribe(val id: ID, val payload: GraphQLRequest) : Message()
 
     @Serializable
     @SerialName("next")
@@ -36,6 +37,3 @@ sealed class Message {
     @SerialName("complete")
     data class Complete(val id: ID) : Message()
 }
-
-@Serializable
-data class SubscribePayload(val operationName: String?, val query: String, val variables: Map<String, String>?)

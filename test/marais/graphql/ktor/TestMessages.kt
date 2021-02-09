@@ -1,6 +1,8 @@
 package marais.graphql.ktor
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import marais.graphql.ktor.types.Message
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -37,5 +39,13 @@ class TestMessages {
             ) is Message.ConnectionInit,
             "Correct instancing"
         )
+    }
+
+    @Serializable
+    data class A(val myMap: Map<String, @Serializable(with = AnyValueSerializer::class) Any?>)
+
+    @Test
+    fun testCustom() {
+        println(Json.encodeToString(A.serializer(), A(mapOf("key" to mapOf("subkey" to 42)))))
     }
 }

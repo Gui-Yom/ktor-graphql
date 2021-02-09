@@ -25,6 +25,7 @@ dependencies {
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Logging
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
@@ -39,9 +40,10 @@ dependencies {
 
     // GraphQL
     api("com.expediagroup:graphql-kotlin-schema-generator:$gqlKtVersion")
-    implementation("com.expediagroup:graphql-kotlin-server:$gqlKtVersion")
 
     testImplementation("io.ktor:ktor-server-tests")
+    testImplementation("io.ktor:ktor-server-test-host")
+    testImplementation("io.ktor:ktor-serialization")
 }
 
 sourceSets {

@@ -8,3 +8,7 @@ A ready to configure graphql engine based on graphql-kotlin
 
 Exposes the graphql engine as a feature to your application. Automatically configures a graphql http endpoint based on
 the specified configuration. Can also add a graphql over websocket endpoint.
+
+### Subobjectives
+
+Replace jackson with kotlinx-serialization
