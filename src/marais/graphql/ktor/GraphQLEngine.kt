@@ -1,11 +1,5 @@
 package marais.graphql.ktor
 
-import com.expediagroup.graphql.generator.SchemaGenerator
-import com.expediagroup.graphql.generator.SchemaGeneratorConfig
-import com.expediagroup.graphql.generator.TopLevelNames
-import com.expediagroup.graphql.generator.TopLevelObject
-import com.expediagroup.graphql.generator.execution.SimpleKotlinDataFetcherFactoryProvider
-import com.expediagroup.graphql.generator.hooks.NoopSchemaGeneratorHooks
 import graphql.GraphQL
 import io.ktor.application.*
 import io.ktor.http.cio.websocket.*
@@ -22,13 +16,12 @@ import marais.graphql.ktor.exception.KotlinGraphQLError
 import marais.graphql.ktor.types.GraphQLRequest
 import marais.graphql.ktor.types.GraphQLResponse
 import marais.graphql.ktor.types.Message
-import kotlin.reflect.KType
 
-class GraphQLFeature(conf: Configuration) {
+class GraphQLEngine(conf: Configuration) {
 
     val allowGraphQLOverWS = conf.allowGraphQLOverWS
     val json = conf.json
-    val graphql = GraphQL.newGraphQL(conf.buildSchema()).build()
+    val graphql = GraphQL.Builder(null).apply(conf.graphqlConfiguration).build()
 
     suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>) {
 
@@ -86,37 +79,18 @@ class GraphQLFeature(conf: Configuration) {
          * Allow graphql-over-websocket communication, requires ktor `Websockets` feature to be installed.
          */
         var allowGraphQLOverWS = false
-        val json = Json
-        var queries = emptyList<TopLevelObject>()
-        var mutations = emptyList<TopLevelObject>()
-        var subscriptions = emptyList<TopLevelObject>()
-        var additionalTypes = emptySet<KType>()
-        var additionalInputTypes = emptySet<KType>()
-        var supportedPackages = emptyList<String>()
-        var hooks = NoopSchemaGeneratorHooks
-        var introspectionEnabled = true
+        var json = Json
+        internal var graphqlConfiguration: GraphQL.Builder.() -> Unit = {}
 
-        internal fun buildSchema() = SchemaGenerator(
-            SchemaGeneratorConfig(
-                supportedPackages,
-                TopLevelNames(),
-                hooks,
-                SimpleKotlinDataFetcherFactoryProvider(),
-                introspectionEnabled
-            )
-        ).generateSchema(
-            queries,
-            mutations,
-            subscriptions,
-            additionalTypes,
-            additionalInputTypes
-        )
+        infix fun graphqlConfig(config: GraphQL.Builder.() -> Unit) {
+            this.graphqlConfiguration = config
+        }
     }
 
-    companion object Feature : ApplicationFeature<Application, Configuration, GraphQLFeature> {
-        override val key = AttributeKey<GraphQLFeature>("GraphQL")
+    companion object Feature : ApplicationFeature<Application, Configuration, GraphQLEngine> {
+        override val key = AttributeKey<GraphQLEngine>("GraphQL")
 
-        override fun install(pipeline: Application, configure: Configuration.() -> Unit): GraphQLFeature {
+        override fun install(pipeline: Application, configure: Configuration.() -> Unit): GraphQLEngine {
             val conf = Configuration().apply(configure)
 
             if (conf.allowGraphQLOverWS) {
@@ -124,7 +98,7 @@ class GraphQLFeature(conf: Configuration) {
                 pipeline.feature(WebSockets)
             }
 
-            val graphql = GraphQLFeature(conf)
+            val graphql = GraphQLEngine(conf)
             return graphql
         }
     }
@@ -135,7 +109,7 @@ fun Routing.graphql(
     path: String,
     handler: suspend PipelineContext<Unit, ApplicationCall>.() -> Unit
 ): Route {
-    val gql = application.feature(GraphQLFeature)
+    val gql = application.feature(GraphQLEngine)
 
     return route(path) {
 

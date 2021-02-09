@@ -1,5 +1,7 @@
 package marais.graphql.ktor
 
+import com.expediagroup.graphql.generator.SchemaGenerator
+import com.expediagroup.graphql.generator.SchemaGeneratorConfig
 import com.expediagroup.graphql.generator.TopLevelObject
 import io.ktor.application.*
 import io.ktor.features.*
@@ -13,7 +15,7 @@ import marais.graphql.ktor.types.GraphQLResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class TestGraphQLFeature {
+class TestGraphQLEngine {
 
     object Query {
         fun query(): Int = 42
@@ -22,12 +24,21 @@ class TestGraphQLFeature {
     @Test
     fun testGraphQLFeature() = withTestApplication({
 
-        install(GraphQLFeature) {
-            queries = listOf(TopLevelObject(Query))
+        val json = Json
+
+        install(GraphQLEngine) {
+            this.json = json
+            graphqlConfig {
+                schema(
+                    SchemaGenerator(SchemaGeneratorConfig(listOf("marais.graphql.ktor"))).generateSchema(
+                        listOf(TopLevelObject(Query))
+                    )
+                )
+            }
         }
 
         install(ContentNegotiation) {
-            json(Json)
+            json(json)
         }
 
         routing {
