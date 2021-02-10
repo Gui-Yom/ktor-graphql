@@ -2,7 +2,8 @@ package marais.graphql.ktor
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import marais.graphql.ktor.types.Message
+import marais.graphql.ktor.data.AnyValueSerializer
+import marais.graphql.ktor.data.Message
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

@@ -12,9 +12,9 @@ import io.ktor.serialization.*
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
 import kotlinx.serialization.json.Json
-import marais.graphql.ktor.types.GraphQLRequest
-import marais.graphql.ktor.types.GraphQLResponse
-import marais.graphql.ktor.types.Message
+import marais.graphql.ktor.data.GraphQLRequest
+import marais.graphql.ktor.data.GraphQLResponse
+import marais.graphql.ktor.data.Message
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

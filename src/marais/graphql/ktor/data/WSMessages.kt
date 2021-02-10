@@ -1,4 +1,4 @@
-package marais.graphql.ktor.types
+package marais.graphql.ktor.data
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName

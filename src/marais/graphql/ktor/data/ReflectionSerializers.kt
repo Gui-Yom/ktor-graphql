@@ -1,4 +1,4 @@
-package marais.graphql.ktor
+package marais.graphql.ktor.data
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer

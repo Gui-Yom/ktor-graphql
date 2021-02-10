@@ -14,11 +14,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.serialization.builtins.ArraySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import marais.graphql.ktor.exception.KotlinGraphQLError
-import marais.graphql.ktor.types.GraphQLRequest
-import marais.graphql.ktor.types.GraphQLResponse
-import marais.graphql.ktor.types.ID
-import marais.graphql.ktor.types.Message
+import marais.graphql.ktor.data.*
 import org.reactivestreams.Publisher
 
 class GraphQLEngine(conf: Configuration) {
