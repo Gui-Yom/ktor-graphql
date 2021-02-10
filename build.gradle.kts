@@ -3,7 +3,9 @@ val ktorVersion: String by project
 val kotlinVersion: String by project
 val ktxSerializationVersion: String by project
 val ktxCoroutinesVersion: String by project
+val gqlVersion: String by project
 val gqlKtVersion: String by project
+val reactiveVersion: String by project
 
 plugins {
     kotlin("jvm")
@@ -22,10 +24,13 @@ dependencies {
     // Kotlin
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:$kotlinVersion"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
 
     // Logging
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
@@ -39,11 +44,14 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$ktxSerializationVersion")
 
     // GraphQL
-    api("com.expediagroup:graphql-kotlin-schema-generator:$gqlKtVersion")
+    implementation("com.graphql-java:graphql-java:$gqlVersion")
+
+    implementation("org.reactivestreams:reactive-streams:$reactiveVersion")
 
     testImplementation("io.ktor:ktor-server-tests")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("io.ktor:ktor-serialization")
+    testImplementation("com.expediagroup:graphql-kotlin-schema-generator:$gqlKtVersion")
 }
 
 sourceSets {

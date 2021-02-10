@@ -20,6 +20,7 @@ import graphql.ExecutionResult
 import marais.graphql.ktor.types.GraphQLError
 import marais.graphql.ktor.types.GraphQLResponse
 import marais.graphql.ktor.types.SourceLocation
+import org.reactivestreams.Publisher
 
 /**
  * Convert a graphql-java result to the common serializable type [GraphQLResponse]
@@ -31,6 +32,8 @@ fun ExecutionResult.toGraphQLResponse(): GraphQLResponse {
     val filteredExtensions: MutableMap<Any, Any>? = if (extensions?.isNotEmpty() == true) extensions else null
     return GraphQLResponse(data, filteredErrors, filteredExtensions as Map<String, Any?>?)
 }
+
+fun ExecutionResult.isSubscription() = getData<Any?>() is Publisher<*>
 
 /**
  * Convert the graphql-java type to the common serializable type [GraphQLError]

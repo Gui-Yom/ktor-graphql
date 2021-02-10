@@ -27,7 +27,7 @@ sealed class Message {
 
     @Serializable
     @SerialName("next")
-    data class Next(val id: ID, val payload: String) : Message()
+    data class Next(val id: ID, val payload: GraphQLResponse) : Message()
 
     @Serializable
     @SerialName("error")

@@ -16,7 +16,6 @@
 
 package marais.graphql.ktor
 
-import com.expediagroup.graphql.generator.execution.DefaultGraphQLContext
 import graphql.ExecutionInput
 import marais.graphql.ktor.types.GraphQLRequest
 import org.dataloader.DataLoaderRegistry
@@ -27,11 +26,14 @@ import org.dataloader.DataLoaderRegistry
 fun GraphQLRequest.toExecutionInput(
     graphQLContext: Any? = null,
     dataLoaderRegistry: DataLoaderRegistry? = null
-): ExecutionInput =
-    ExecutionInput.newExecutionInput()
+): ExecutionInput {
+    val builder = ExecutionInput.newExecutionInput()
         .query(this.query)
         .operationName(this.operationName)
         .variables(this.variables ?: emptyMap())
-        .context(graphQLContext ?: DefaultGraphQLContext())
         .dataLoaderRegistry(dataLoaderRegistry ?: DataLoaderRegistry())
-        .build()
+    if (graphQLContext != null) {
+        builder.context(graphQLContext)
+    }
+    return builder.build()
+}
