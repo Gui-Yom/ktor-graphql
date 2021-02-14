@@ -15,7 +15,7 @@ Replace jackson with kotlinx-serialization
 
 ## Examples
 
-Example ktor integration :
+Example usage :
 
 ```kotlin
 install(GraphQLEngine) {
@@ -25,7 +25,40 @@ install(GraphQLEngine) {
 }
 
 install(ContentNegotiation) {
-    json(json)
+    json()
+}
+
+routing {
+    graphql("/graphql") {
+        // Do something before handling graphql like authentication
+    }
+}
+```
+
+Example usage (with Flow support in subscriptions, with `graphql-kotlin`) :
+
+```kotlin
+install(WebSockets)
+
+install(GraphQLEngine) {
+    allowGraphQLOverWS = true
+    graphqlConfig {
+        schema(
+            toSchema(
+                config = SchemaGeneratorConfig(
+                    supportedPackages = listOf("mypackage"),
+                    hooks = FlowSubscriptionSchemaGeneratorHooks()
+                ),
+                queries = listOf(TopLevelObject(Query)),
+                subscriptions = listOf(TopLevelObject(Subscription))
+            )
+        )
+        subscriptionExecutionStrategy(FlowSubscriptionExecutionStrategy())
+    }
+}
+
+install(ContentNegotiation) {
+    json()
 }
 
 routing {
@@ -44,3 +77,4 @@ routing {
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)
 - [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
+- [ ] Allow customizing GraphQLContext and DataloaderRegistry
