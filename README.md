@@ -41,5 +41,6 @@ routing {
 - [x] Http endpoint POST
 - [ ] Http endpoint GET
 - [ ] Subscription support via SSE
-- [ ] Graphql over websocket
-- [ ] Subscription support via websocket
+- [x] Graphql over websocket
+- [x] Subscription support via websocket (basic)
+- [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl

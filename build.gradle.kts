@@ -44,7 +44,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$ktxSerializationVersion")
 
     // GraphQL
-    implementation("com.graphql-java:graphql-java:$gqlVersion")
+    api("com.graphql-java:graphql-java:$gqlVersion")
 
     implementation("org.reactivestreams:reactive-streams:$reactiveVersion")
 
@@ -78,6 +78,7 @@ java {
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
+            useIR = true
             jvmTarget = JavaVersion.VERSION_11.toString()
             //javaParameters = true
             //freeCompilerArgs = listOf("-Xemit-jvm-type-annotations")

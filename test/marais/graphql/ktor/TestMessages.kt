@@ -46,7 +46,7 @@ class TestMessages {
     data class A(val myMap: Map<String, @Serializable(with = AnyValueSerializer::class) Any?>)
 
     @Test
-    fun testCustom() {
+    fun testReflectionSerializer() {
         println(Json.encodeToString(A.serializer(), A(mapOf("key" to mapOf("subkey" to 42)))))
     }
 }
