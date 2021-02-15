@@ -71,8 +71,8 @@ routing {
 ## TODO
 
 - [x] Basic graphql engine configuration and feature
-- [x] Http endpoint POST
-- [ ] Http endpoint GET
+- [x] Http endpoint POST (only json body)
+- [x] Http endpoint GET
 - [ ] Subscription support via SSE
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)

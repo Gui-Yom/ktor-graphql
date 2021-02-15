@@ -8,19 +8,19 @@ import io.ktor.websocket.*
 @ContextDsl
 fun Routing.graphql(
     path: String,
-    handler: suspend PipelineContext<Unit, ApplicationCall>.() -> Unit
+    handler: suspend PipelineContext<Unit, ApplicationCall>.(Unit) -> Unit
 ): Route {
     val gql = application.feature(GraphQLEngine)
 
     return route(path) {
 
-        handle { handler(this) }
+        handle(handler)
 
         if (gql.allowGraphQLOverWS) {
-            webSocket(protocol = "graphql-transport-ws") { gql.handleWebsocket(this) }
+            webSocket(protocol = "graphql-transport-ws", gql::handleWebsocket)
         }
 
-        get { gql.handleGet(this) }
-        post { gql.handlePost(this) }
+        get(gql::handleGet)
+        post(gql::handlePost)
     }
 }

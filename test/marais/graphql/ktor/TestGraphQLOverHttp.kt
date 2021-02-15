@@ -20,14 +20,10 @@ class TestGraphQLOverHttp {
     fun testSimpleQuery() = withTestApplication({
         install(GraphQLEngine) {
             this.json = marais.graphql.ktor.json
-            graphqlConfig {
-                schema(
-                    toSchema(
-                        config = SchemaGeneratorConfig(listOf("marais.graphql.ktor")),
-                        queries = listOf(TopLevelObject(Query))
-                    )
-                )
-            }
+            schema = toSchema(
+                config = SchemaGeneratorConfig(listOf("marais.graphql.ktor")),
+                queries = listOf(TopLevelObject(Query))
+            )
         }
 
         install(ContentNegotiation) {

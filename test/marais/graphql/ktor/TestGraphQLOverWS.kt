@@ -29,14 +29,10 @@ class TestGraphQLOverWS {
         install(GraphQLEngine) {
             this.json = marais.graphql.ktor.json
             allowGraphQLOverWS = true
-            graphqlConfig {
-                schema(
-                    toSchema(
-                        config = SchemaGeneratorConfig(listOf("marais.graphql.ktor")),
-                        queries = listOf(TopLevelObject(Query))
-                    )
-                )
-            }
+            schema = toSchema(
+                config = SchemaGeneratorConfig(listOf("marais.graphql.ktor")),
+                queries = listOf(TopLevelObject(Query))
+            )
         }
 
         install(ContentNegotiation) {
@@ -85,17 +81,15 @@ class TestGraphQLOverWS {
         install(GraphQLEngine) {
             this.json = marais.graphql.ktor.json
             allowGraphQLOverWS = true
-            graphqlConfig {
-                schema(
-                    toSchema(
-                        config = SchemaGeneratorConfig(
-                            supportedPackages = listOf("marais.graphql.ktor"),
-                            hooks = FlowSubscriptionSchemaGeneratorHooks()
-                        ),
-                        queries = listOf(TopLevelObject(Query)),
-                        subscriptions = listOf(TopLevelObject(Subscription))
-                    )
-                )
+            schema = toSchema(
+                config = SchemaGeneratorConfig(
+                    supportedPackages = listOf("marais.graphql.ktor"),
+                    hooks = FlowSubscriptionSchemaGeneratorHooks()
+                ),
+                queries = listOf(TopLevelObject(Query)),
+                subscriptions = listOf(TopLevelObject(Subscription))
+            )
+            builder {
                 // Required so we can use kotlin coroutines' Flow<T> directly in the schema
                 subscriptionExecutionStrategy(FlowSubscriptionExecutionStrategy())
             }

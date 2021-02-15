@@ -14,7 +14,7 @@ import org.dataloader.DataLoaderRegistry
 data class GraphQLRequest(
     val query: String,
     val operationName: String? = null,
-    val variables: Map<String, @Contextual Any>? = null
+    val variables: Map<String, @Contextual Any?>? = null
 ) {
     /**
      * Convert the common [GraphQLRequest] to the execution input used by graphql-java

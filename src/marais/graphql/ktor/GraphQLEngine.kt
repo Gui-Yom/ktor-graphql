@@ -2,11 +2,13 @@ package marais.graphql.ktor
 
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.schema.GraphQLSchema
 import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.request.*
 import io.ktor.response.*
+import io.ktor.routing.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
@@ -19,6 +21,8 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.serialization.builtins.ArraySerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import marais.graphql.ktor.data.*
@@ -28,23 +32,44 @@ import org.slf4j.LoggerFactory
 class GraphQLEngine(conf: Configuration) {
 
     val allowGraphQLOverWS = conf.allowGraphQLOverWS
-    val json = conf.json
-    val graphql = GraphQL.Builder(null).apply(conf.graphqlConfiguration).build()
+    private val json = conf.json
+    val graphqlSchema = conf.schema
+    val graphql = GraphQL.Builder(conf.schema).apply(conf.graphqlConfiguration).build()
     private val log = LoggerFactory.getLogger(GraphQLEngine::class.java)
 
-    suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>) {
-        // TODO handle get method
-        ctx.call.respond(HttpStatusCode.Forbidden, "Sorry")
+    suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>, unit: Unit) {
+        val query = ctx.call.request.queryParameters["query"]
+        if (query == null) {
+            ctx.call.respond(HttpStatusCode.BadRequest, "Missing 'query' parameter")
+            return
+        }
+        val variables = ctx.call.request.queryParameters["variables"]?.let {
+            json.decodeFromString(
+                MapSerializer(
+                    String.serializer(),
+                    AnyValueSerializer
+                ),
+                it
+            )
+        }
+        ctx.call.respond(
+            handleGraphQL(
+                GraphQLRequest(
+                    query,
+                    ctx.call.request.queryParameters["operationName"],
+                    variables
+                )
+            )
+        )
     }
 
-    suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>) {
+    suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>, unit: Unit) {
         val jsonElem = json.decodeFromString(JsonElement.serializer(), ctx.call.receiveText())
         try {
             val batch = json.decodeFromJsonElement(ArraySerializer(GraphQLRequest.serializer()), jsonElem)
                 .map { handleGraphQL(it) }
             ctx.call.respond(batch)
         } catch (e: Exception) { // We couldn't parse it as a batched query.
-            // TODO it might be faster to first serialize it as a JsonElement then make it coerce with each one.
             val single = handleGraphQL(json.decodeFromJsonElement(GraphQLRequest.serializer(), jsonElem))
             ctx.call.respond(single)
         }
@@ -137,10 +162,15 @@ class GraphQLEngine(conf: Configuration) {
          * Allow graphql-over-websocket communication, requires ktor `Websockets` feature to be installed.
          */
         var allowGraphQLOverWS = false
-        var json = Json
+        var json: Json = Json
+
+        /**
+         * It is prefered to specify the schema with this property instead of directly in the builder so we can access it later
+         */
+        var schema: GraphQLSchema? = null
         internal var graphqlConfiguration: GraphQL.Builder.() -> Unit = {}
 
-        fun graphqlConfig(config: GraphQL.Builder.() -> Unit) {
+        fun builder(config: GraphQL.Builder.() -> Unit) {
             this.graphqlConfiguration = config
         }
     }
