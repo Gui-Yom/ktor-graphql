@@ -31,6 +31,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
+    implementation("org.reactivestreams:reactive-streams:$reactiveVersion")
 
     // Logging
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
@@ -45,8 +46,6 @@ dependencies {
 
     // GraphQL
     api("com.graphql-java:graphql-java:$gqlVersion")
-
-    implementation("org.reactivestreams:reactive-streams:$reactiveVersion")
 
     testImplementation("io.ktor:ktor-server-tests")
     testImplementation("io.ktor:ktor-server-test-host")
