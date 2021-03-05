@@ -1,8 +1,5 @@
 package marais.graphql.ktor
 
-import com.expediagroup.graphql.generator.SchemaGeneratorConfig
-import com.expediagroup.graphql.generator.TopLevelObject
-import com.expediagroup.graphql.generator.toSchema
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -20,10 +17,7 @@ class TestGraphQLOverHttp {
     fun testSimpleQuery() = withTestApplication({
         install(GraphQLEngine) {
             this.json = marais.graphql.ktor.json
-            schema = toSchema(
-                config = SchemaGeneratorConfig(listOf("marais.graphql.ktor")),
-                queries = listOf(TopLevelObject(Query))
-            )
+            schema = testSchema
         }
 
         install(ContentNegotiation) {

@@ -1,30 +1,39 @@
+plugins {
+    kotlin("jvm")
+    kotlin("plugin.serialization")
+    `maven-publish`
+    signing
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+        }
+    }
+    mavenCentral()
+    jcenter()
+    maven { url = uri("https://kotlin.bintray.com/ktor") }
+}
+
 val slf4jVersion: String by project
 val ktorVersion: String by project
 val kotlinVersion: String by project
 val ktxSerializationVersion: String by project
 val ktxCoroutinesVersion: String by project
 val gqlVersion: String by project
-val gqlKtVersion: String by project
+val gqlDslVersion: String by project
 val reactiveVersion: String by project
-
-plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
-    `maven-publish`
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
-    maven { url = uri("https://kotlin.bintray.com/ktor") }
-}
 
 dependencies {
     // Kotlin
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom:$kotlinVersion"))
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(platform(kotlin("bom", kotlinVersion)))
+    implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("reflect"))
 
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm")
@@ -50,7 +59,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("io.ktor:ktor-serialization")
-    testImplementation("com.expediagroup:graphql-kotlin-schema-generator:$gqlKtVersion")
+    testImplementation("marais:graphql-dsl:$gqlDslVersion")
 }
 
 sourceSets {
@@ -79,38 +88,50 @@ tasks {
         kotlinOptions {
             useIR = true
             jvmTarget = JavaVersion.VERSION_11.toString()
-            //javaParameters = true
-            //freeCompilerArgs = listOf("-Xemit-jvm-type-annotations")
         }
     }
+}
 
-    publishing {
-        publications {
-            create<MavenPublication>("ktor-graphql") {
-                from(project.components["java"])
-                pom {
-                    name.set("ktor-graphql")
-                    description.set("graphql-ws protocol for ktor websockets")
-                    url.set("https://github.com/Gui-Yom/filet")
-                    licenses {
-                        license {
-                            name.set("MIT License")
-                            url.set("https://github.com/Gui-Yom/filet/blob/master/LICENSE")
-                        }
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Gui-Yom/ktor-graphql")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("root") {
+            from(project.components["java"])
+            pom {
+                name.set("ktor-graphql")
+                description.set("graphql-ws protocol for ktor websockets")
+                url.set("https://github.com/Gui-Yom/filet")
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://github.com/Gui-Yom/filet/blob/master/LICENSE")
                     }
-                    developers {
-                        developer {
-                            id.set("Gui-Yom")
-                            name.set("Guillaume Anthouard")
-                        }
+                }
+                developers {
+                    developer {
+                        id.set("Gui-Yom")
+                        name.set("Guillaume Anthouard")
                     }
-                    scm {
-                        connection.set("scm:git:git://github.com/Gui-Yom/filet.git")
-                        developerConnection.set("scm:git:ssh://github.com/Gui-Yom/filet.git")
-                        url.set("https://github.com/Gui-Yom/filet/")
-                    }
+                }
+                scm {
+                    connection.set("scm:git:git://github.com/Gui-Yom/filet.git")
+                    developerConnection.set("scm:git:ssh://github.com/Gui-Yom/filet.git")
+                    url.set("https://github.com/Gui-Yom/filet/")
                 }
             }
         }
     }
+}
+
+signing {
+    sign(publishing.publications["root"])
 }

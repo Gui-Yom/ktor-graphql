@@ -1,10 +1,5 @@
 package marais.graphql.ktor
 
-import com.expediagroup.graphql.generator.SchemaGeneratorConfig
-import com.expediagroup.graphql.generator.TopLevelObject
-import com.expediagroup.graphql.generator.execution.FlowSubscriptionExecutionStrategy
-import com.expediagroup.graphql.generator.hooks.FlowSubscriptionSchemaGeneratorHooks
-import com.expediagroup.graphql.generator.toSchema
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -29,10 +24,7 @@ class TestGraphQLOverWS {
         install(GraphQLEngine) {
             this.json = marais.graphql.ktor.json
             allowGraphQLOverWS = true
-            schema = toSchema(
-                config = SchemaGeneratorConfig(listOf("marais.graphql.ktor")),
-                queries = listOf(TopLevelObject(Query))
-            )
+            schema = testSchema
         }
 
         install(ContentNegotiation) {
@@ -81,18 +73,7 @@ class TestGraphQLOverWS {
         install(GraphQLEngine) {
             this.json = marais.graphql.ktor.json
             allowGraphQLOverWS = true
-            schema = toSchema(
-                config = SchemaGeneratorConfig(
-                    supportedPackages = listOf("marais.graphql.ktor"),
-                    hooks = FlowSubscriptionSchemaGeneratorHooks()
-                ),
-                queries = listOf(TopLevelObject(Query)),
-                subscriptions = listOf(TopLevelObject(Subscription))
-            )
-            builder {
-                // Required so we can use kotlin coroutines' Flow<T> directly in the schema
-                subscriptionExecutionStrategy(FlowSubscriptionExecutionStrategy())
-            }
+            schema = testSchema
         }
 
         install(ContentNegotiation) {

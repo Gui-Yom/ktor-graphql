@@ -2,20 +2,16 @@
 
 ## Features
 
-A ready to configure graphql engine based on graphql-kotlin
+A ready to configure graphql engine based on graphql-kotlin. It uses kotlinx-serialization exclusively :D.
 
 ### GraphQL ktor feature
 
 Exposes the graphql engine as a feature to your application. Automatically configures a graphql http endpoint based on
 the specified configuration. Can also add a graphql over websocket endpoint.
 
-### Subobjectives
-
-Replace jackson with kotlinx-serialization
-
 ## Examples
 
-Example usage :
+Example usage (query/mutation operations, standard http methods only) :
 
 ```kotlin
 install(GraphQLEngine) {
@@ -35,7 +31,7 @@ routing {
 }
 ```
 
-Example usage (with Flow support in subscriptions, with `graphql-kotlin`) :
+Example usage (all operations supported, http routes + websocket) :
 
 ```kotlin
 install(WebSockets)
@@ -43,17 +39,7 @@ install(WebSockets)
 install(GraphQLEngine) {
     allowGraphQLOverWS = true
     graphqlConfig {
-        schema(
-            toSchema(
-                config = SchemaGeneratorConfig(
-                    supportedPackages = listOf("mypackage"),
-                    hooks = FlowSubscriptionSchemaGeneratorHooks()
-                ),
-                queries = listOf(TopLevelObject(Query)),
-                subscriptions = listOf(TopLevelObject(Subscription))
-            )
-        )
-        subscriptionExecutionStrategy(FlowSubscriptionExecutionStrategy())
+        schema(MySchema)
     }
 }
 
@@ -73,8 +59,8 @@ routing {
 - [x] Basic graphql engine configuration and feature
 - [x] Http endpoint POST (only json body)
 - [x] Http endpoint GET
-- [ ] Subscription support via SSE
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)
-- [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
 - [ ] Allow customizing GraphQLContext and DataloaderRegistry
+- [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
+- [ ] Subscription support via SSE

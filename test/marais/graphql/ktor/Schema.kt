@@ -3,6 +3,7 @@ package marais.graphql.ktor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import marais.graphql.generator.SchemaGenerator
 
 object Query {
     fun number(): Int = 42
@@ -19,3 +20,8 @@ object Subscription {
         }
     }
 }
+
+internal val testSchema = SchemaGenerator {
+    query(Query) { derive() }
+    subscription(Subscription) { derive() }
+}.build()
