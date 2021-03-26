@@ -7,14 +7,7 @@ plugins {
 
 repositories {
     mavenLocal()
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
-        credentials {
-            username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-        }
-    }
+    githubPackages("Gui-Yom/graphql-dsl")
     mavenCentral()
     jcenter()
     maven { url = uri("https://kotlin.bintray.com/ktor") }
@@ -94,14 +87,7 @@ tasks {
 
 publishing {
     repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Gui-Yom/ktor-graphql")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-            }
-        }
+        githubPackages("Gui-Yom/ktor-graphql")
     }
     publications {
         create<MavenPublication>("root") {
@@ -134,4 +120,13 @@ publishing {
 
 signing {
     sign(publishing.publications["root"])
+}
+
+fun RepositoryHandler.githubPackages(path: String) = maven {
+    url = uri("https://maven.pkg.github.com/$path")
+    name = "GithubPackages"
+    credentials {
+        username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+        password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+    }
 }
