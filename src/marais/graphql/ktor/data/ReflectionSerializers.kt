@@ -96,8 +96,6 @@ object AnyMapSerializer : KSerializer<Map<String, Any?>> {
     override val descriptor = AnyMapDescriptor(AnyValueSerializer.descriptor)
 
     override fun serialize(encoder: Encoder, value: Map<String, Any?>) {
-        println("Serializing : $value")
-
         val composite = encoder.beginStructure(descriptor)
         var index = 0
         value.forEach { (k, v) ->
@@ -144,8 +142,6 @@ object AnyListSerializer : KSerializer<List<Any?>> {
     override val descriptor = AnyListDescriptor(AnyValueSerializer.descriptor)
 
     override fun serialize(encoder: Encoder, value: List<Any?>) {
-        println("Serializing : $value")
-
         val composite = encoder.beginStructure(descriptor)
         var index = 0
         value.forEach { v ->
