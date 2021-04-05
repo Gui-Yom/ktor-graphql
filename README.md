@@ -64,3 +64,4 @@ routing {
 - [ ] Allow customizing GraphQLContext and DataloaderRegistry
 - [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
 - [ ] Subscription support via SSE
+- [ ] Replace kotlinx.serialization with jackson because we graphql structures can only be expressed with reflection

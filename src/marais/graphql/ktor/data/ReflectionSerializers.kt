@@ -24,6 +24,8 @@ object AnyValueSerializer : KSerializer<Any?> {
                 encoder.encodeSerializableValue(serializer(valueType), value)
             } else if (value is Map<*, *>) {
                 encoder.encodeSerializableValue(AnyMapSerializer, value as Map<String, Any?>)
+            } else if (value is List<*>) {
+                encoder.encodeSerializableValue(AnyListSerializer, value as List<Any?>)
             }
         } else {
             encoder.encodeNull()
@@ -94,6 +96,8 @@ object AnyMapSerializer : KSerializer<Map<String, Any?>> {
     override val descriptor = AnyMapDescriptor(AnyValueSerializer.descriptor)
 
     override fun serialize(encoder: Encoder, value: Map<String, Any?>) {
+        println("Serializing : $value")
+
         val composite = encoder.beginStructure(descriptor)
         var index = 0
         value.forEach { (k, v) ->
@@ -104,6 +108,53 @@ object AnyMapSerializer : KSerializer<Map<String, Any?>> {
     }
 
     override fun deserialize(decoder: Decoder): Map<String, Any?> {
+        throw UnsupportedOperationException("Only serialization is supported")
+    }
+}
+
+@ExperimentalSerializationApi
+class AnyListDescriptor(
+    val valueDescriptor: SerialDescriptor
+) : SerialDescriptor {
+    override val serialName: String = "AnyMap"
+    override val kind: SerialKind get() = StructureKind.LIST
+    override val elementsCount: Int = 1
+    override fun getElementName(index: Int): String = index.toString()
+    override fun getElementIndex(name: String): Int =
+        name.toIntOrNull() ?: throw IllegalArgumentException("$name is not a valid map index")
+
+    override fun isElementOptional(index: Int): Boolean {
+        require(index >= 0) { "Illegal index $index, $serialName expects only non-negative indices" }
+        return false
+    }
+
+    override fun getElementAnnotations(index: Int): List<Annotation> {
+        require(index >= 0) { "Illegal index $index, $serialName expects only non-negative indices" }
+        return emptyList()
+    }
+
+    override fun getElementDescriptor(index: Int): SerialDescriptor {
+        require(index >= 0) { "Illegal index $index, $serialName expects only non-negative indices" }
+        return valueDescriptor
+    }
+}
+
+object AnyListSerializer : KSerializer<List<Any?>> {
+    // Dummy
+    override val descriptor = AnyListDescriptor(AnyValueSerializer.descriptor)
+
+    override fun serialize(encoder: Encoder, value: List<Any?>) {
+        println("Serializing : $value")
+
+        val composite = encoder.beginStructure(descriptor)
+        var index = 0
+        value.forEach { v ->
+            composite.encodeSerializableElement(descriptor, index++, AnyValueSerializer, v)
+        }
+        composite.endStructure(descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): List<Any?> {
         throw UnsupportedOperationException("Only serialization is supported")
     }
 }
