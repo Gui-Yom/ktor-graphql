@@ -94,12 +94,12 @@ publishing {
             from(project.components["java"])
             pom {
                 name.set("ktor-graphql")
-                description.set("graphql-ws protocol for ktor websockets")
-                url.set("https://github.com/Gui-Yom/filet")
+                description.set("A graphql feature for Ktor.")
+                url.set("https://github.com/Gui-Yom/ktor-graphql")
                 licenses {
                     license {
                         name.set("MIT License")
-                        url.set("https://github.com/Gui-Yom/filet/blob/master/LICENSE")
+                        url.set("https://github.com/Gui-Yom/ktor-graphql/blob/master/LICENSE")
                     }
                 }
                 developers {
@@ -109,9 +109,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection.set("scm:git:git://github.com/Gui-Yom/filet.git")
-                    developerConnection.set("scm:git:ssh://github.com/Gui-Yom/filet.git")
-                    url.set("https://github.com/Gui-Yom/filet/")
+                    connection.set("scm:git:git://github.com/Gui-Yom/ktor-graphql.git")
+                    developerConnection.set("scm:git:ssh://github.com/Gui-Yom/ktor-graphql.git")
+                    url.set("https://github.com/Gui-Yom/ktor-graphql/")
                 }
             }
         }

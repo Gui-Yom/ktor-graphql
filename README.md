@@ -2,7 +2,7 @@
 
 ## Features
 
-A ready to configure graphql engine based on graphql-kotlin. It uses kotlinx-serialization exclusively :D.
+A graphql feature for Ktor.
 
 ### GraphQL ktor feature
 
