@@ -15,11 +15,11 @@ This is required to correctly encode 'type' discriminator.
 sealed class Message {
     @Serializable
     @SerialName("connection_init")
-    data class ConnectionInit(val payload: Map<String, @Contextual Any>?) : Message()
+    data class ConnectionInit(val payload: Map<String, @Contextual Any>? = null) : Message()
 
     @Serializable
     @SerialName("connection_ack")
-    data class ConnectionAck(val payload: Map<String, @Contextual Any>?) : Message()
+    data class ConnectionAck(val payload: Map<String, @Contextual Any>? = null) : Message()
 
     @Serializable
     @SerialName("subscribe")

@@ -8,7 +8,6 @@ import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.request.*
 import io.ktor.response.*
-import io.ktor.routing.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
@@ -28,6 +27,7 @@ import kotlinx.serialization.json.JsonElement
 import marais.graphql.ktor.data.*
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
+import kotlin.collections.set
 
 class GraphQLEngine(conf: Configuration) {
 
@@ -99,6 +99,7 @@ class GraphQLEngine(conf: Configuration) {
             }
         }
 
+        // This is scoped to a single connection
         val subscriptions = mutableMapOf<ID, Job>()
 
         // Scope to launch in
