@@ -11,9 +11,9 @@ import org.reactivestreams.Publisher
  */
 @Serializable
 data class GraphQLResponse(
-    val data: Map<String, @Serializable(with = AnyValueSerializer::class) Any?>? = null,
+    val data: Map<String, @Serializable(with = AnyTreeSerializer::class) Any?>? = null,
     val errors: List<GraphQLError>? = null,
-    val extensions: Map<String, @Serializable(with = AnyValueSerializer::class) Any?>? = null
+    val extensions: Map<String, @Serializable(with = AnyTreeSerializer::class) Any?>? = null
 )
 
 /**

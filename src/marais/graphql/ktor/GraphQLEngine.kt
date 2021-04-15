@@ -47,7 +47,7 @@ class GraphQLEngine(conf: Configuration) {
             json.decodeFromString(
                 MapSerializer(
                     String.serializer(),
-                    AnyValueSerializer
+                    AnyTreeSerializer
                 ),
                 it
             )

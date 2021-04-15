@@ -1,7 +1,6 @@
 package marais.graphql.ktor.data
 
 import graphql.ExecutionInput
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.dataloader.DataLoaderRegistry
 
@@ -14,7 +13,7 @@ import org.dataloader.DataLoaderRegistry
 data class GraphQLRequest(
     val query: String,
     val operationName: String? = null,
-    val variables: Map<String, @Contextual Any?>? = null
+    val variables: Map<String, @Serializable(with = AnyTreeSerializer::class) Any?>? = null
 ) {
     /**
      * Convert the common [GraphQLRequest] to the execution input used by graphql-java

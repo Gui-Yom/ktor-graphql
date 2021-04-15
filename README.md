@@ -35,6 +35,7 @@ Example usage (all operations supported, http routes + websocket) :
 
 ```kotlin
 install(WebSockets)
+// You might want to install the Deflate Websocket extension because some client libraries use it by default
 
 install(GraphQLEngine) {
     allowGraphQLOverWS = true
@@ -61,6 +62,7 @@ routing {
 - [x] Http endpoint GET
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)
+- [ ] Urgent ! We need variable support, requires the use of jackson instead of kotlinx
 - [ ] Allow customizing GraphQLContext and DataloaderRegistry
 - [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
 - [ ] Subscription support via SSE

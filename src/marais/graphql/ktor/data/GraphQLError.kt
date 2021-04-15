@@ -1,6 +1,5 @@
 package marais.graphql.ktor.data
 
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 /**
@@ -26,12 +25,12 @@ data class GraphQLError(
      * Path segments that represent fields should be strings, and path segments that represent list indices should be 0‐indexed integers. If the error happens in an aliased field, the path to the
      * error should use the aliased name, since it represents a path in the response, not in the query.
      */
-    val path: List<@Contextual Any>? = null,
+    val path: List<@Serializable(with = AnyTreeSerializer::class) Any?>? = null,
 
     /**
      * Additional information about the error.
      */
-    val extensions: Map<String, @Serializable(with = AnyValueSerializer::class) Any?>? = null
+    val extensions: Map<String, @Serializable(with = AnyTreeSerializer::class) Any?>? = null
 )
 
 /**
