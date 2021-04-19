@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization")
+    //kotlin("plugin.serialization")
     `maven-publish`
     signing
 }
@@ -9,7 +9,6 @@ repositories {
     mavenLocal()
     githubPackages("Gui-Yom/graphql-dsl")
     mavenCentral()
-    jcenter()
     maven { url = uri("https://kotlin.bintray.com/ktor") }
 }
 
@@ -21,12 +20,13 @@ val ktxCoroutinesVersion: String by project
 val gqlVersion: String by project
 val gqlDslVersion: String by project
 val reactiveVersion: String by project
+val jacksonVersion: String by project
 
 dependencies {
     // Kotlin
     implementation(platform(kotlin("bom", kotlinVersion)))
     implementation(kotlin("stdlib-jdk8"))
-    implementation(kotlin("reflect"))
+    //implementation(kotlin("reflect"))
 
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm")
@@ -44,14 +44,17 @@ dependencies {
     api("io.ktor:ktor-websockets")
 
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$ktxSerializationVersion")
+    //implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$ktxSerializationVersion")
+    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     // GraphQL
     api("com.graphql-java:graphql-java:$gqlVersion")
 
     testImplementation("io.ktor:ktor-server-tests")
     testImplementation("io.ktor:ktor-server-test-host")
-    testImplementation("io.ktor:ktor-serialization")
+    testImplementation("io.ktor:ktor-jackson")
     testImplementation("marais:graphql-dsl:$gqlDslVersion")
 }
 

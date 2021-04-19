@@ -1,39 +1,29 @@
 package marais.graphql.ktor.data
 
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+
 
 typealias ID = String
 
-/*
-WARNING ! Must use the more generic Message.serializer() to ser/deser every message types.
-This is required to correctly encode 'type' discriminator.
- */
-
-@Serializable
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type"
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = Message.ConnectionInit::class, name = "connection_init"),
+    JsonSubTypes.Type(value = Message.ConnectionAck::class, name = "connection_ack"),
+    JsonSubTypes.Type(value = Message.Subscribe::class, name = "subscribe"),
+    JsonSubTypes.Type(value = Message.Next::class, name = "next"),
+    JsonSubTypes.Type(value = Message.Error::class, name = "error"),
+    JsonSubTypes.Type(value = Message.Complete::class, name = "complete"),
+)
 sealed class Message {
-    @Serializable
-    @SerialName("connection_init")
-    data class ConnectionInit(val payload: Map<String, @Contextual Any>? = null) : Message()
-
-    @Serializable
-    @SerialName("connection_ack")
-    data class ConnectionAck(val payload: Map<String, @Contextual Any>? = null) : Message()
-
-    @Serializable
-    @SerialName("subscribe")
+    data class ConnectionInit(val payload: Map<String, Any>? = null) : Message()
+    data class ConnectionAck(val payload: Map<String, Any>? = null) : Message()
     data class Subscribe(val id: ID, val payload: GraphQLRequest) : Message()
-
-    @Serializable
-    @SerialName("next")
     data class Next(val id: ID, val payload: GraphQLResponse) : Message()
-
-    @Serializable
-    @SerialName("error")
     data class Error(val id: ID, val payload: String) : Message()
-
-    @Serializable
-    @SerialName("complete")
     data class Complete(val id: ID) : Message()
 }

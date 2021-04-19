@@ -1,11 +1,12 @@
 package marais.graphql.ktor
 
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
+import io.ktor.jackson.*
 import io.ktor.routing.*
-import io.ktor.serialization.*
 import io.ktor.server.testing.*
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
@@ -22,13 +23,14 @@ class TestGraphQLOverWS {
         install(io.ktor.websocket.WebSockets)
 
         install(GraphQLEngine) {
-            this.json = marais.graphql.ktor.json
             allowGraphQLOverWS = true
             schema = testSchema
         }
 
         install(ContentNegotiation) {
-            json(json)
+            jackson {
+                registerModule(KotlinModule())
+            }
         }
 
         routing {
@@ -40,21 +42,13 @@ class TestGraphQLOverWS {
         handleWebSocketConversation("/graphql", {
             addHeader(HttpHeaders.SecWebSocketProtocol, "graphql-transport-ws")
         }) { incoming, outgoing ->
-            outgoing.send(Frame.Text(json.encodeToString(Message.serializer(), Message.ConnectionInit(null))))
+            outgoing.sendMessage(Message.ConnectionInit(null))
             // ACK
             incoming.receive()
-            outgoing.send(
-                Frame.Text(
-                    json.encodeToString(
-                        Message.serializer(),
-                        Message.Subscribe("69420", GraphQLRequest("query { number }"))
-                    )
-                )
-            )
+            outgoing.sendMessage(Message.Subscribe("69420", GraphQLRequest("query { number }")))
             val response = incoming.receive() as Frame.Text
             assertEquals(
-                json.encodeToString(
-                    Message.serializer(),
+                mapper.writeValueAsString(
                     Message.Next("69420", GraphQLResponse(mapOf("number" to 42)))
                 ),
                 response.readText(),
@@ -71,13 +65,14 @@ class TestGraphQLOverWS {
         install(io.ktor.websocket.WebSockets)
 
         install(GraphQLEngine) {
-            this.json = marais.graphql.ktor.json
             allowGraphQLOverWS = true
             schema = testSchema
         }
 
         install(ContentNegotiation) {
-            json(json)
+            jackson {
+                registerModule(KotlinModule())
+            }
         }
 
         routing {
@@ -95,8 +90,7 @@ class TestGraphQLOverWS {
             for (i in 0..2) { // We should receive 3 Next messages
                 assertEquals(
                     (incoming.receive() as Frame.Text).readText(),
-                    json.encodeToString(
-                        Message.serializer(),
+                    mapper.writeValueAsString(
                         Message.Next("69420", GraphQLResponse(mapOf("number" to 42)))
                     )
                 )

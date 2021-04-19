@@ -1,5 +1,8 @@
 package marais.graphql.ktor
 
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
@@ -19,11 +22,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.serialization.builtins.ArraySerializer
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import marais.graphql.ktor.data.*
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
@@ -32,7 +30,7 @@ import kotlin.collections.set
 class GraphQLEngine(conf: Configuration) {
 
     val allowGraphQLOverWS = conf.allowGraphQLOverWS
-    private val json = conf.json
+    private val mapper = conf.mapper
     val graphqlSchema = conf.schema
     val graphql = GraphQL.Builder(conf.schema).apply(conf.graphqlConfiguration).build()
     private val log = LoggerFactory.getLogger(GraphQLEngine::class.java)
@@ -43,14 +41,8 @@ class GraphQLEngine(conf: Configuration) {
             ctx.call.respond(HttpStatusCode.BadRequest, "Missing 'query' parameter")
             return
         }
-        val variables = ctx.call.request.queryParameters["variables"]?.let {
-            json.decodeFromString(
-                MapSerializer(
-                    String.serializer(),
-                    AnyTreeSerializer
-                ),
-                it
-            )
+        val variables: Map<String, Any?>? = ctx.call.request.queryParameters["variables"]?.let {
+            mapper.readerForMapOf(Any::class.java).readValue(it)
         }
         ctx.call.respond(
             handleGraphQL(
@@ -64,14 +56,18 @@ class GraphQLEngine(conf: Configuration) {
     }
 
     suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>, unit: Unit) {
-        val jsonElem = json.decodeFromString(JsonElement.serializer(), ctx.call.receiveText())
+        val json = ctx.call.receiveText()
         try {
-            val batch = json.decodeFromJsonElement(ArraySerializer(GraphQLRequest.serializer()), jsonElem)
-                .map { handleGraphQL(it) }
-            ctx.call.respond(batch)
-        } catch (e: Exception) { // We couldn't parse it as a batched query.
-            val single = handleGraphQL(json.decodeFromJsonElement(GraphQLRequest.serializer(), jsonElem))
-            ctx.call.respond(single)
+            val request = mapper.readValue(json, GraphQLRequest::class.java)
+            ctx.call.respond(handleGraphQL(request))
+        } catch (e: JsonMappingException) {
+            error(e)
+            val batch: Array<GraphQLRequest> = mapper.readerForArrayOf(GraphQLRequest::class.java).readValue(json)
+            ctx.call.respond(batch.map { handleGraphQL(it) })
+        } catch (e: Exception) {
+            // TODO meaningful messages
+            // TODO json error messages
+            ctx.call.respond(HttpStatusCode.BadRequest, "Bad request")
         }
     }
 
@@ -88,10 +84,10 @@ class GraphQLEngine(conf: Configuration) {
     suspend fun handleWebsocket(ws: DefaultWebSocketServerSession) {
         // Receive connection init message
         // TODO wait timeout
-        when (val msg = ws.incoming.receive().toMessage(json)) {
+        when (val msg = ws.receiveMessage(mapper)) {
             is Message.ConnectionInit -> {
                 // TODO maybe allow to do something with [msg.payload]
-                ws.sendMessage(json, Message.ConnectionAck(emptyMap()))
+                ws.sendMessage(mapper, Message.ConnectionAck(emptyMap()))
             }
             else -> {
                 ws.close(CloseReason(4401, "Unauthorized"))
@@ -107,7 +103,7 @@ class GraphQLEngine(conf: Configuration) {
             // Ready to process
             try {
                 for (frame in ws.incoming) {
-                    when (val msg = frame.toMessage(json)) {
+                    when (val msg = frame.toMessage(mapper)) {
                         is Message.Subscribe -> {
 
                             if (msg.id in subscriptions) {
@@ -125,15 +121,15 @@ class GraphQLEngine(conf: Configuration) {
                                     .buffer(1)
                                 subscriptions[msg.id] = launch {
                                     pub.collect {
-                                        ws.sendMessage(json, Message.Next(msg.id, it.toGraphQLResponse()))
+                                        ws.sendMessage(mapper, Message.Next(msg.id, it.toGraphQLResponse()))
                                     }
-                                    ws.sendMessage(json, Message.Complete(msg.id))
+                                    ws.sendMessage(mapper, Message.Complete(msg.id))
                                     subscriptions.remove(msg.id)
                                 }
 
                             } else { // Its a normal query/mutation
-                                ws.sendMessage(json, Message.Next(msg.id, result.toGraphQLResponse()))
-                                ws.sendMessage(json, Message.Complete(msg.id))
+                                ws.sendMessage(mapper, Message.Next(msg.id, result.toGraphQLResponse()))
+                                ws.sendMessage(mapper, Message.Complete(msg.id))
                             }
                         }
                         is Message.Complete -> {
@@ -163,7 +159,8 @@ class GraphQLEngine(conf: Configuration) {
          * Allow graphql-over-websocket communication, requires ktor `Websockets` feature to be installed.
          */
         var allowGraphQLOverWS = false
-        var json: Json = Json
+
+        var mapper = ObjectMapper().registerModule(KotlinModule())
 
         /**
          * It is prefered to specify the schema with this property instead of directly in the builder so we can access it later

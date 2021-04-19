@@ -1,13 +1,10 @@
 package marais.graphql.ktor.data
 
-import kotlinx.serialization.Serializable
-
 /**
  * GraphQL error representation that is spec complaint with serialization and deserialization.
  *
  * @see [GraphQL Specification](http://spec.graphql.org/June2018/#sec-Errors) for additional details
  */
-@Serializable
 data class GraphQLError(
     /**
      * Description of the error.
@@ -25,12 +22,12 @@ data class GraphQLError(
      * Path segments that represent fields should be strings, and path segments that represent list indices should be 0‐indexed integers. If the error happens in an aliased field, the path to the
      * error should use the aliased name, since it represents a path in the response, not in the query.
      */
-    val path: List<@Serializable(with = AnyTreeSerializer::class) Any?>? = null,
+    val path: List<Any?>? = null,
 
     /**
      * Additional information about the error.
      */
-    val extensions: Map<String, @Serializable(with = AnyTreeSerializer::class) Any?>? = null
+    val extensions: Map<String, Any?>? = null
 )
 
 /**

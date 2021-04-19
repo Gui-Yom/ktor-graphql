@@ -1,7 +1,6 @@
 package marais.graphql.ktor.data
 
 import graphql.ExecutionInput
-import kotlinx.serialization.Serializable
 import org.dataloader.DataLoaderRegistry
 
 /**
@@ -9,11 +8,10 @@ import org.dataloader.DataLoaderRegistry
  *
  * @see [GraphQL Over HTTP](https://graphql.org/learn/serving-over-http/#post-request) for additional details
  */
-@Serializable
 data class GraphQLRequest(
     val query: String,
     val operationName: String? = null,
-    val variables: Map<String, @Serializable(with = AnyTreeSerializer::class) Any?>? = null
+    val variables: Map<String, Any?>? = null
 ) {
     /**
      * Convert the common [GraphQLRequest] to the execution input used by graphql-java
