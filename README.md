@@ -11,41 +11,25 @@ the specified configuration. Can also add a graphql over websocket endpoint.
 
 ## Examples
 
-Example usage (query/mutation operations, standard http methods only) :
+Example usage with http methods (no subscriptions) and websockets :
 
 ```kotlin
-install(GraphQLEngine) {
-    graphqlConfig {
-        schema(MySchema)
-    }
-}
-
-install(ContentNegotiation) {
-    json()
-}
-
-routing {
-    graphql("/graphql") {
-        // Do something before handling graphql like authentication
-    }
-}
-```
-
-Example usage (all operations supported, http routes + websocket) :
-
-```kotlin
+// For graphql-over-ws support
 install(WebSockets)
 // You might want to install the Deflate Websocket extension because some client libraries use it by default
 
 install(GraphQLEngine) {
-    allowGraphQLOverWS = true
     graphqlConfig {
         schema(MySchema)
     }
 }
 
 install(ContentNegotiation) {
-    json()
+    // For graphql-over-ws support
+    allowGraphQLOverWS = true
+    jackson {
+        registerModule(KotlinModule())
+    }
 }
 
 routing {
@@ -62,8 +46,6 @@ routing {
 - [x] Http endpoint GET
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)
-- [ ] Urgent ! We need variable support, requires the use of jackson instead of kotlinx
 - [ ] Allow customizing GraphQLContext and DataloaderRegistry
 - [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
 - [ ] Subscription support via SSE
-- [ ] Replace kotlinx.serialization with jackson because we graphql structures can only be expressed with reflection
