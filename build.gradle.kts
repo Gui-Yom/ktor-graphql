@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm")
-    //kotlin("plugin.serialization")
     `maven-publish`
     signing
 }
@@ -15,7 +14,6 @@ repositories {
 val slf4jVersion: String by project
 val ktorVersion: String by project
 val kotlinVersion: String by project
-val ktxSerializationVersion: String by project
 val ktxCoroutinesVersion: String by project
 val gqlVersion: String by project
 val gqlDslVersion: String by project
@@ -44,7 +42,6 @@ dependencies {
     api("io.ktor:ktor-websockets")
 
     // Serialization
-    //implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$ktxSerializationVersion")
     implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
