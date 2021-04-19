@@ -15,6 +15,7 @@ import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.buffer
@@ -146,10 +147,17 @@ class GraphQLEngine(conf: Configuration) {
                     }
                 }
             } catch (e: ClosedReceiveChannelException) {
-                println("onClose ${ws.closeReason.await()}")
+                // Closed more or less gracefully
+                subscriptions.values.forEach {
+                    it.cancelAndJoin()
+                }
             } catch (e: Throwable) {
-                println("onError ${ws.closeReason.await()}")
-                e.printStackTrace()
+                // Closed much less gracefully
+                log.warn(e.message)
+                // FIXME probably a better way of cancelling our jobs
+                subscriptions.values.forEach {
+                    it.cancelAndJoin()
+                }
             }
         }
     }
