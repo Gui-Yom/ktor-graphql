@@ -1,5 +1,6 @@
 package marais.graphql.ktor
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -168,7 +169,9 @@ class GraphQLEngine(conf: Configuration) {
          */
         var allowGraphQLOverWS = false
 
-        var mapper = ObjectMapper().registerModule(KotlinModule())
+        var mapper = ObjectMapper()
+            .registerModule(KotlinModule())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         /**
          * It is prefered to specify the schema with this property instead of directly in the builder so we can access it later
