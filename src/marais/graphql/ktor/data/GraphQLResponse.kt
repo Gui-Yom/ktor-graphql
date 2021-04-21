@@ -1,5 +1,6 @@
 package marais.graphql.ktor.data
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import graphql.ExecutionResult
 import org.reactivestreams.Publisher
 
@@ -8,7 +9,7 @@ import org.reactivestreams.Publisher
  *
  * @see [GraphQL Specification](http://spec.graphql.org/June2018/#sec-Data) for additional details
  */
-@JsonInclude(Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class GraphQLResponse(
     val data: Map<String, Any?>? = null,
     val errors: List<GraphQLError>? = null,
