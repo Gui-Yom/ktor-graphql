@@ -8,6 +8,7 @@ import org.reactivestreams.Publisher
  *
  * @see [GraphQL Specification](http://spec.graphql.org/June2018/#sec-Data) for additional details
  */
+@JsonInclude(Include.NON_NULL)
 data class GraphQLResponse(
     val data: Map<String, Any?>? = null,
     val errors: List<GraphQLError>? = null,

@@ -14,6 +14,7 @@ fun Routing.graphql(
 
     return route(path) {
 
+        // FIXME this handler is not behaving correctly
         handle(handler)
 
         if (gql.allowGraphQLOverWS) {
