@@ -63,7 +63,6 @@ class GraphQLEngine(conf: Configuration) {
             val request = mapper.readValue(json, GraphQLRequest::class.java)
             ctx.call.respond(handleGraphQL(request))
         } catch (e: JsonMappingException) {
-            error(e)
             val batch: Array<GraphQLRequest> = mapper.readerForArrayOf(GraphQLRequest::class.java).readValue(json)
             ctx.call.respond(batch.map { handleGraphQL(it) })
         } catch (e: Exception) {

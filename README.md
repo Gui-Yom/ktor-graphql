@@ -46,6 +46,7 @@ routing {
 - [x] Http endpoint GET
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)
+- [ ] Use the serialization provided by ktor ? 
 - [ ] Allow customizing GraphQLContext and DataloaderRegistry
 - [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
 - [ ] Subscription support via SSE
