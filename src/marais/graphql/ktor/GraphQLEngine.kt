@@ -25,19 +25,22 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import marais.graphql.ktor.data.*
+import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 import kotlin.collections.set
 
 class GraphQLEngine(conf: Configuration) {
 
-    val allowGraphQLOverWS = conf.allowGraphQLOverWS
     private val mapper = conf.mapper
     val graphqlSchema = conf.schema
     val graphql = GraphQL.Builder(conf.schema).apply(conf.graphqlConfiguration).build()
+
+    private val dataLoaderRegistry = DataLoaderRegistry()
+
     private val log = LoggerFactory.getLogger(GraphQLEngine::class.java)
 
-    suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>, unit: Unit) {
+    suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Any) {
         val query = ctx.call.request.queryParameters["query"]
         if (query == null) {
             ctx.call.respond(HttpStatusCode.BadRequest, "Missing 'query' parameter")
@@ -46,25 +49,27 @@ class GraphQLEngine(conf: Configuration) {
         val variables: Map<String, Any?>? = ctx.call.request.queryParameters["variables"]?.let {
             mapper.readerForMapOf(Any::class.java).readValue(it)
         }
+
         ctx.call.respond(
             handleGraphQL(
                 GraphQLRequest(
                     query,
                     ctx.call.request.queryParameters["operationName"],
                     variables
-                )
+                ),
+                gqlCtx
             )
         )
     }
 
-    suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>, unit: Unit) {
+    suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Any) {
         val json = ctx.call.receiveText()
         try {
             val request = mapper.readValue(json, GraphQLRequest::class.java)
-            ctx.call.respond(handleGraphQL(request))
+            ctx.call.respond(handleGraphQL(request, gqlCtx))
         } catch (e: JsonMappingException) {
             val batch: Array<GraphQLRequest> = mapper.readerForArrayOf(GraphQLRequest::class.java).readValue(json)
-            ctx.call.respond(batch.map { handleGraphQL(it) })
+            ctx.call.respond(batch.map { handleGraphQL(it, gqlCtx) })
         } catch (e: Exception) {
             // TODO meaningful messages
             // TODO json error messages
@@ -72,22 +77,28 @@ class GraphQLEngine(conf: Configuration) {
         }
     }
 
-    suspend fun handleGraphQL(input: GraphQLRequest): GraphQLResponse {
+    suspend fun handleGraphQL(input: GraphQLRequest, context: Any): GraphQLResponse {
         return try {
-            // TODO graphql context and dataloader registry
-            graphql.executeAsync(input.toExecutionInput(null, null)).await().toGraphQLResponse()
+            graphql.executeAsync(input.toExecutionInput(context, dataLoaderRegistry)).await().toGraphQLResponse()
         } catch (exception: Exception) {
             val graphKotlinQLError = KotlinGraphQLError(exception)
             GraphQLResponse(errors = listOf(graphKotlinQLError.toGraphQLKotlinType()))
         }
     }
 
-    suspend fun handleWebsocket(ws: DefaultWebSocketServerSession) {
+    suspend fun handleWebsocket(
+        ws: DefaultWebSocketServerSession,
+        contextBuilder: suspend DefaultWebSocketServerSession.(Map<String, Any>?) -> Any?
+    ) {
+
+        var context: Any? = null
+
         // Receive connection init message
         // TODO wait timeout
         when (val msg = ws.receiveMessage(mapper)) {
             is Message.ConnectionInit -> {
-                // TODO maybe allow to do something with [msg.payload]
+                context = contextBuilder(ws, msg.payload)
+                context ?: return
                 ws.sendMessage(mapper, Message.ConnectionAck(emptyMap()))
             }
             else -> {
@@ -113,7 +124,12 @@ class GraphQLEngine(conf: Configuration) {
                             }
 
                             // TODO graphql context and dataloader registry
-                            val result = graphql.executeAsync(msg.payload.toExecutionInput(null, null)).await()
+                            val result = graphql.executeAsync(
+                                msg.payload.toExecutionInput(
+                                    context,
+                                    dataLoaderRegistry
+                                )
+                            ).await()
                             // If what's inside the execution result is a publisher, then its a running subscription
                             if (result.isSubscription()) {
                                 // Non blocking, so we can continue processing of other requests while streaming this subscription
@@ -163,11 +179,6 @@ class GraphQLEngine(conf: Configuration) {
     }
 
     class Configuration {
-        /**
-         * Allow graphql-over-websocket communication, requires ktor `Websockets` feature to be installed.
-         */
-        var allowGraphQLOverWS = false
-
         var mapper = ObjectMapper()
             .registerModule(KotlinModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -188,11 +199,6 @@ class GraphQLEngine(conf: Configuration) {
 
         override fun install(pipeline: Application, configure: Configuration.() -> Unit): GraphQLEngine {
             val conf = Configuration().apply(configure)
-
-            if (conf.allowGraphQLOverWS) {
-                // The websocket feature is required
-                pipeline.feature(WebSockets)
-            }
 
             val graphql = GraphQLEngine(conf)
             return graphql

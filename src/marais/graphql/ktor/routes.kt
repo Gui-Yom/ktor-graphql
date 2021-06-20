@@ -5,23 +5,42 @@ import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 
+/**
+ * The handler should return a non null value indicating the request is accepted.
+ * That value will then be used as a GraphQL execution context.
+ */
 @ContextDsl
 fun Routing.graphql(
     path: String,
-    handler: suspend PipelineContext<Unit, ApplicationCall>.(Unit) -> Unit
+    handler: suspend PipelineContext<Unit, ApplicationCall>.() -> Any?
 ): Route {
     val gql = application.feature(GraphQLEngine)
 
     return route(path) {
-
-        // FIXME this handler is not behaving correctly
-        handle(handler)
-
-        if (gql.allowGraphQLOverWS) {
-            webSocket(protocol = "graphql-transport-ws", gql::handleWebsocket)
+        get {
+            val context = handler(this)
+            context?.let { gql.handleGet(this, it) }
         }
+        post {
+            val context = handler(this)
+            context?.let { gql.handlePost(this, it) }
+        }
+    }
+}
 
-        get(gql::handleGet)
-        post(gql::handlePost)
+/**
+ * This has no effect if allowGraphQLOverWS has been set to false.
+ * The handler should return a non null value indicating the request is accepted.
+ * That value will then be used as a GraphQL execution context.
+ */
+@ContextDsl
+fun Routing.graphqlWS(
+    path: String,
+    handler: suspend DefaultWebSocketServerSession.(Map<String, Any>?) -> Any
+) {
+    val gql = application.feature(GraphQLEngine)
+
+    webSocket(path, protocol = "graphql-transport-ws") {
+        gql.handleWebsocket(this, handler)
     }
 }

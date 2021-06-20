@@ -19,14 +19,10 @@ install(WebSockets)
 // You might want to install the Deflate Websocket extension because some client libraries use it by default
 
 install(GraphQLEngine) {
-    graphqlConfig {
-        schema(MySchema)
-    }
+    schema = testSchema
 }
 
 install(ContentNegotiation) {
-    // For graphql-over-ws support
-    allowGraphQLOverWS = true
     jackson {
         registerModule(KotlinModule())
     }
@@ -35,6 +31,14 @@ install(ContentNegotiation) {
 routing {
     graphql("/graphql") {
         // Do something before handling graphql like authentication
+        // The returned object will be the graphql context
+        // return null to prevent processing the request
+    }
+    graphqlWS("/graphql") {
+        // Do something before handling graphql like authentication
+        // You get access to the initial payload Map
+        // The returned object will be the graphql context
+        // return null to prevent processing the request
     }
 }
 ```
@@ -46,7 +50,7 @@ routing {
 - [x] Http endpoint GET
 - [x] Graphql over websocket
 - [x] Subscription support via websocket (basic)
-- [ ] Use the serialization provided by ktor ? 
+- [ ] Use the serialization provided by ktor ?
 - [ ] Allow customizing GraphQLContext and DataloaderRegistry
 - [ ] Complete [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md) spec impl
 - [ ] Subscription support via SSE

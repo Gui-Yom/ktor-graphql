@@ -5,6 +5,8 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.jackson.*
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.testing.*
 import marais.graphql.ktor.data.GraphQLRequest
@@ -12,7 +14,7 @@ import marais.graphql.ktor.data.GraphQLResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class TestGraphQLOverHttp {
+class TestHttp {
 
     @Test
     fun testSimpleQuery() = withTestApplication({
@@ -29,6 +31,8 @@ class TestGraphQLOverHttp {
         routing {
             graphql("/graphql") {
                 // Do something before handling graphql like authentication
+                println("yay ${this.context.request}")
+                "Yay !"
             }
         }
     }) {
@@ -41,6 +45,41 @@ class TestGraphQLOverHttp {
                 response.content,
                 "Expected response"
             )
+        }
+    }
+
+    @Test
+    fun testMultipleQueries() = withTestApplication({
+        install(GraphQLEngine) {
+            schema = testSchema
+        }
+
+        install(ContentNegotiation) {
+            jackson {
+                registerModule(KotlinModule())
+            }
+        }
+
+        routing {
+            graphql("/graphql") {
+                // Do something before handling graphql like authentication
+                println("Req ID : ${this.context.request.header("x-req-id")}")
+                "Passed !"
+            }
+        }
+    }) {
+        for (i in 0..10) {
+            with(handleRequest(HttpMethod.Post, "/graphql") {
+                addHeader("x-req-id", i.toString())
+                val str = mapper.writeValueAsString(GraphQLRequest("query { number }"))
+                setBody(str)
+            }) {
+                assertEquals(
+                    mapper.writeValueAsString(GraphQLResponse(mapOf("number" to 42))),
+                    response.content,
+                    "Expected response"
+                )
+            }
         }
     }
 
@@ -58,7 +97,7 @@ class TestGraphQLOverHttp {
 
         routing {
             graphql("/graphql") {
-                // Do something before handling graphql like authentication
+                "Yay"
             }
         }
     }) {
@@ -71,6 +110,72 @@ class TestGraphQLOverHttp {
             setBody(str)
         }) {
             println(response.content)
+        }
+    }
+
+    @Test
+    fun testUnaccepted() = withTestApplication({
+        install(GraphQLEngine) {
+            schema = testSchema
+        }
+
+        install(ContentNegotiation) {
+            jackson {
+                registerModule(KotlinModule())
+            }
+        }
+
+        routing {
+            graphql("/graphql") {
+                // Nope
+                call.respond(object {
+                    val error = "Unauthorized"
+                })
+                null
+            }
+        }
+    }) {
+        with(handleRequest(HttpMethod.Post, "/graphql") {
+            val str = mapper.writeValueAsString(GraphQLRequest("query { number }"))
+            setBody(str)
+        }) {
+            assertEquals(
+                """{"error":"Unauthorized"}""",
+                response.content,
+                "Expected response"
+            )
+        }
+    }
+
+    @Test
+    fun testGraphQLContext() = withTestApplication({
+        install(GraphQLEngine) {
+            schema = testSchema
+        }
+
+        install(ContentNegotiation) {
+            jackson {
+                registerModule(KotlinModule())
+            }
+        }
+
+        routing {
+            graphql("/graphql") {
+                // Set the graphql context based on some header value
+                ContextObject(call.request.header("x-req-id")!!.toInt())
+            }
+        }
+    }) {
+        with(handleRequest(HttpMethod.Post, "/graphql") {
+            val str = mapper.writeValueAsString(GraphQLRequest("query { envConsumer }"))
+            setBody(str)
+            addHeader("x-req-id", "1")
+        }) {
+            assertEquals(
+                mapper.writeValueAsString(GraphQLResponse(mapOf("envConsumer" to 1))),
+                response.content,
+                "Expected response"
+            )
         }
     }
 }

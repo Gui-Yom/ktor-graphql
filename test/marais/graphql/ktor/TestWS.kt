@@ -15,7 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class TestGraphQLOverWS {
+class TestWS {
 
     @Test
     fun testSimpleQuery(): Unit = withTestApplication({
@@ -23,7 +23,6 @@ class TestGraphQLOverWS {
         install(io.ktor.websocket.WebSockets)
 
         install(GraphQLEngine) {
-            allowGraphQLOverWS = true
             schema = testSchema
         }
 
@@ -34,8 +33,8 @@ class TestGraphQLOverWS {
         }
 
         routing {
-            graphql("/graphql") {
-                // Do something before handling graphql like authentication
+            graphqlWS("/graphql") {
+                "Yay !"
             }
         }
     }) {
@@ -65,7 +64,6 @@ class TestGraphQLOverWS {
         install(io.ktor.websocket.WebSockets)
 
         install(GraphQLEngine) {
-            allowGraphQLOverWS = true
             schema = testSchema
         }
 
@@ -76,8 +74,8 @@ class TestGraphQLOverWS {
         }
 
         routing {
-            graphql("/graphql") {
-                // Do something before handling graphql like authentication
+            graphqlWS("/graphql") {
+                "Yay !"
             }
         }
     }) {

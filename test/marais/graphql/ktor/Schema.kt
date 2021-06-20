@@ -1,12 +1,19 @@
 package marais.graphql.ktor
 
+import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import marais.graphql.dsl.SchemaBuilder
 
+data class ContextObject(val reqId: Int)
+
 object Query {
     fun number(): Int = 42
+
+    fun envConsumer(env: DataFetchingEnvironment): Int {
+        return env.getContext<ContextObject>().reqId
+    }
 }
 
 object Subscription {
