@@ -8,14 +8,13 @@ repositories {
     mavenLocal()
     githubPackages("Gui-Yom/graphql-dsl")
     mavenCentral()
-    maven { url = uri("https://kotlin.bintray.com/ktor") }
 }
 
-val slf4jVersion: String by project
 val ktorVersion: String by project
 val kotlinVersion: String by project
 val ktxCoroutinesVersion: String by project
 val gqlVersion: String by project
+val log4jVersion: String by project
 val gqlDslVersion: String by project
 val reactiveVersion: String by project
 val jacksonVersion: String by project
@@ -34,7 +33,7 @@ dependencies {
     implementation("org.reactivestreams:reactive-streams:$reactiveVersion")
 
     // Logging
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("org.apache.logging.log4j:log4j-api:$log4jVersion")
 
     // Ktor main
     implementation(platform("io.ktor:ktor-bom:$ktorVersion"))
@@ -52,6 +51,8 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("io.ktor:ktor-jackson")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
     testImplementation("marais:graphql-dsl:$gqlDslVersion")
 }
 
@@ -79,7 +80,6 @@ java {
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            useIR = true
             jvmTarget = JavaVersion.VERSION_11.toString()
         }
     }
