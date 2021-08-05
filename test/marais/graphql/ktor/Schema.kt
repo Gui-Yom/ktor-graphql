@@ -4,7 +4,7 @@ import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import marais.graphql.dsl.SchemaBuilder
+import marais.graphql.dsl.GraphQLSchema
 
 data class ContextObject(val reqId: Int)
 
@@ -28,7 +28,7 @@ object Subscription {
     }
 }
 
-internal val testSchema = SchemaBuilder {
-    query(Query) { derive() }
-    subscription(Subscription) { derive() }
-}.build()
+internal val testSchema = GraphQLSchema {
+    query(Query)
+    subscription(Subscription)
+}

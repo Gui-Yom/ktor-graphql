@@ -48,8 +48,10 @@ dependencies {
     // GraphQL
     api("com.graphql-java:graphql-java:$gqlVersion")
 
-    testImplementation("io.ktor:ktor-server-tests")
-    testImplementation("io.ktor:ktor-server-test-host")
+    testImplementation("io.ktor:ktor-server-test-host") {
+        exclude("ch.qos.logback")
+    }
+    testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-jackson")
     testRuntimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")

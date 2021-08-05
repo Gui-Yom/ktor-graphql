@@ -25,9 +25,9 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import marais.graphql.ktor.data.*
+import org.apache.logging.log4j.LogManager
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
-import org.slf4j.LoggerFactory
 import kotlin.collections.set
 
 class GraphQLEngine(conf: Configuration) {
@@ -38,7 +38,7 @@ class GraphQLEngine(conf: Configuration) {
 
     private val dataLoaderRegistry = DataLoaderRegistry()
 
-    private val log = LoggerFactory.getLogger(GraphQLEngine::class.java)
+    private val log = LogManager.getLogger()
 
     suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Any) {
         val query = ctx.call.request.queryParameters["query"]
@@ -119,7 +119,7 @@ class GraphQLEngine(conf: Configuration) {
                         is Message.Subscribe -> {
 
                             if (msg.id in subscriptions) {
-                                ws.close(CloseReason(4409, "Subscriber for <unique-operation-id> already exists"))
+                                ws.close(CloseReason(4409, "Subscriber for id ${msg.id} already exists"))
                                 return@coroutineScope
                             }
 
@@ -179,7 +179,7 @@ class GraphQLEngine(conf: Configuration) {
     }
 
     class Configuration {
-        var mapper = ObjectMapper()
+        var mapper: ObjectMapper = ObjectMapper()
             .registerModule(KotlinModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
