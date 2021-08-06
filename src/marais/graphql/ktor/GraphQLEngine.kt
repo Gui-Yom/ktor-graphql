@@ -15,15 +15,12 @@ import io.ktor.response.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.collect
 import marais.graphql.ktor.data.*
 import org.apache.logging.log4j.LogManager
 import org.dataloader.DataLoaderRegistry
@@ -67,9 +64,15 @@ class GraphQLEngine(conf: Configuration) {
         try {
             val request = mapper.readValue(json, GraphQLRequest::class.java)
             ctx.call.respond(handleGraphQL(request, gqlCtx))
+
+            // IMHO That is one terrible way of handling the case where we get an array of queries
+            // But hey it works
         } catch (e: JsonMappingException) {
             val batch: Array<GraphQLRequest> = mapper.readerForArrayOf(GraphQLRequest::class.java).readValue(json)
-            ctx.call.respond(batch.map { handleGraphQL(it, gqlCtx) })
+            // Run all queries concurrently
+            ctx.call.respond(coroutineScope {
+                batch.map { async { handleGraphQL(it, gqlCtx) } }
+            }.awaitAll())
         } catch (e: Exception) {
             // TODO meaningful messages
             // TODO json error messages
@@ -98,7 +101,6 @@ class GraphQLEngine(conf: Configuration) {
         when (val msg = ws.receiveMessage(mapper)) {
             is Message.ConnectionInit -> {
                 context = contextBuilder(ws, msg.payload)
-                context ?: return
                 ws.sendMessage(mapper, Message.ConnectionAck(emptyMap()))
             }
             else -> {
@@ -116,6 +118,7 @@ class GraphQLEngine(conf: Configuration) {
             try {
                 for (frame in ws.incoming) {
                     when (val msg = frame.toMessage(mapper)) {
+                        // Client wants to start a new subscription
                         is Message.Subscribe -> {
 
                             if (msg.id in subscriptions) {
@@ -123,20 +126,19 @@ class GraphQLEngine(conf: Configuration) {
                                 return@coroutineScope
                             }
 
-                            // TODO graphql context and dataloader registry
                             val result = graphql.executeAsync(
                                 msg.payload.toExecutionInput(
                                     context,
                                     dataLoaderRegistry
                                 )
                             ).await()
+
                             // If what's inside the execution result is a publisher, then its a running subscription
-                            if (result.isSubscription()) {
-                                // Non blocking, so we can continue processing of other requests while streaming this subscription
+                            if (result.isPublisher()) {
                                 val pub = result.getData<Publisher<ExecutionResult>>()
-                                    .asFlow()
-                                    .buffer(1)
                                 subscriptions[msg.id] = launch {
+                                    // Internally, this creates a Channel and other things
+                                    // Returning a flow in a subscription is definitely more performant
                                     pub.collect {
                                         ws.sendMessage(mapper, Message.Next(msg.id, it.toGraphQLResponse()))
                                     }
@@ -144,18 +146,31 @@ class GraphQLEngine(conf: Configuration) {
                                     subscriptions.remove(msg.id)
                                 }
 
-                            } else { // Its a normal query/mutation
+                                // We also check if it's a flow
+                            } else if (result.isFlow()) {
+                                val flow = result.getData<Flow<ExecutionResult>>()
+                                subscriptions[msg.id] = launch {
+                                    flow.collect {
+                                        ws.sendMessage(mapper, Message.Next(msg.id, it.toGraphQLResponse()))
+                                    }
+                                    ws.sendMessage(mapper, Message.Complete(msg.id))
+                                    subscriptions.remove(msg.id)
+                                }
+                            } else { // It's a normal query/mutation
                                 ws.sendMessage(mapper, Message.Next(msg.id, result.toGraphQLResponse()))
                                 ws.sendMessage(mapper, Message.Complete(msg.id))
                             }
                         }
+                        // Client wants to terminate a subscription
                         is Message.Complete -> {
                             subscriptions.remove(msg.id)?.cancel()
                         }
+                        // Client wants to init a graphql-ws connection but the connection is already opened
                         is Message.ConnectionInit -> {
                             ws.close(CloseReason(4429, "Too many initialisation requests"))
                             return@coroutineScope
                         }
+                        // Client sent us an unexpected message
                         else -> {
                             ws.close(CloseReason(4400, "Unexpected message"))
                             return@coroutineScope

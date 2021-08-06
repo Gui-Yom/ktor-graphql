@@ -51,11 +51,12 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host") {
         exclude("ch.qos.logback")
     }
-    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit5"))
     testImplementation("io.ktor:ktor-jackson")
     testRuntimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
-    testImplementation("marais:graphql-dsl:$gqlDslVersion")
+    testImplementation("marais.graphql:graphql-dsl:$gqlDslVersion")
+    testImplementation("marais.graphql:graphql-dsl-test:$gqlDslVersion")
 }
 
 sourceSets {
@@ -84,6 +85,10 @@ tasks {
         kotlinOptions {
             jvmTarget = JavaVersion.VERSION_11.toString()
         }
+    }
+
+    test {
+        useJUnitPlatform()
     }
 }
 

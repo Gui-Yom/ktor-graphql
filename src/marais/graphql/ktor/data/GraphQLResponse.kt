@@ -2,6 +2,7 @@ package marais.graphql.ktor.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import graphql.ExecutionResult
+import kotlinx.coroutines.flow.Flow
 import org.reactivestreams.Publisher
 
 /**
@@ -27,5 +28,6 @@ fun ExecutionResult.toGraphQLResponse(): GraphQLResponse {
     return GraphQLResponse(data, filteredErrors, filteredExtensions as Map<String, Any?>?)
 }
 
-fun ExecutionResult.isSubscription() = getData<Any?>() is Publisher<*>
+fun ExecutionResult.isPublisher() = getData<Any?>() is Publisher<*>
 
+fun ExecutionResult.isFlow() = getData<Any?>() is Flow<*>
