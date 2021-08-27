@@ -13,6 +13,7 @@ import marais.graphql.ktor.data.GraphQLResponse
 import marais.graphql.ktor.data.Message
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class TestWS {
@@ -38,10 +39,8 @@ class TestWS {
             }
         }
     }) {
-        handleWebSocketConversation("/graphql", {
-            addHeader(HttpHeaders.SecWebSocketProtocol, "graphql-transport-ws")
-        }) { incoming, outgoing ->
-            outgoing.sendMessage(Message.ConnectionInit(null))
+        makeGraphQLOverWSCall("/graphql") { incoming, outgoing ->
+            outgoing.sendMessage(Message.ConnectionInit())
             // ACK
             incoming.receive()
             outgoing.sendMessage(Message.Subscribe("69420", GraphQLRequest("query { number }")))
@@ -54,7 +53,7 @@ class TestWS {
                 "Expected response"
             )
             // Complete
-            incoming.receive()
+            assertIs<Message.Complete>(incoming.receiveMessage())
         }
     }
 
@@ -80,7 +79,7 @@ class TestWS {
         }
     }) {
         makeGraphQLOverWSCall("/graphql") { incoming, outgoing ->
-            outgoing.sendMessage(Message.ConnectionInit(null))
+            outgoing.sendMessage(Message.ConnectionInit())
 
             assertTrue(incoming.receive().isMessage<Message.ConnectionAck>())
 
@@ -95,6 +94,37 @@ class TestWS {
             }
             // Complete
             assertTrue(incoming.receive().isMessage<Message.Complete>())
+        }
+    }
+
+    @Test
+    fun testPing(): Unit = withTestApplication({
+
+        install(io.ktor.websocket.WebSockets)
+
+        install(GraphQLEngine) {
+            schema = testSchema
+        }
+
+        install(ContentNegotiation) {
+            jackson {
+                registerModule(KotlinModule())
+            }
+        }
+
+        routing {
+            graphqlWS("/graphql") {
+                "Yay !"
+            }
+        }
+    }) {
+        makeGraphQLOverWSCall("/graphql") { incoming, outgoing ->
+            outgoing.sendMessage(Message.ConnectionInit())
+
+            assertTrue(incoming.receive().isMessage<Message.ConnectionAck>())
+
+            outgoing.sendMessage(Message.Ping())
+            assertTrue(incoming.receive().isMessage<Message.Pong>())
         }
     }
 }

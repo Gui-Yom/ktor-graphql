@@ -191,6 +191,8 @@ class GraphQLEngine(conf: Configuration) {
                 }
             } catch (e: ClosedReceiveChannelException) {
                 // Closed more or less gracefully
+            } catch (e: CancellationException) {
+                // MMMh
             } catch (e: Throwable) {
                 // Closed much less gracefully
                 log.warn(e.message)
