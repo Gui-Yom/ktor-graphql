@@ -91,20 +91,26 @@ class GraphQLEngine(conf: Configuration) {
 
     suspend fun handleWebsocket(
         ws: DefaultWebSocketServerSession,
-        contextBuilder: suspend DefaultWebSocketServerSession.(Map<String, Any>?) -> Any?
+        contextBuilder: suspend DefaultWebSocketServerSession.(Record?) -> Any?
     ) {
-
         var context: Any? = null
 
         // Receive connection init message
-        // TODO wait timeout
-        when (val msg = ws.receiveMessage(mapper)) {
+        // TODO configurable initial timeout
+        val msg = withTimeoutOrNull(5000) {
+            ws.receiveMessage(mapper)
+        }
+        if (msg == null) {
+            ws.close(CloseReasons.INIT_TIMEOUT)
+            return
+        }
+        when (msg) {
             is Message.ConnectionInit -> {
                 context = contextBuilder(ws, msg.payload)
                 ws.sendMessage(mapper, Message.ConnectionAck(emptyMap()))
             }
             else -> {
-                ws.close(CloseReason(4401, "Unauthorized"))
+                ws.close(CloseReasons.UNAUTHORIZED)
                 return
             }
         }
@@ -122,7 +128,7 @@ class GraphQLEngine(conf: Configuration) {
                         is Message.Subscribe -> {
 
                             if (msg.id in subscriptions) {
-                                ws.close(CloseReason(4409, "Subscriber for id ${msg.id} already exists"))
+                                ws.close(CloseReasons.ALREADY_SUBSCRIBED(msg.id))
                                 return@coroutineScope
                             }
 
@@ -167,27 +173,32 @@ class GraphQLEngine(conf: Configuration) {
                         }
                         // Client wants to init a graphql-ws connection but the connection is already opened
                         is Message.ConnectionInit -> {
-                            ws.close(CloseReason(4429, "Too many initialisation requests"))
+                            ws.close(CloseReasons.ALREADY_INIT)
                             return@coroutineScope
+                        }
+                        is Message.Ping -> {
+                            ws.sendMessage(mapper, Message.Pong())
+                        }
+                        is Message.Pong -> {
+                            // Nothing
                         }
                         // Client sent us an unexpected message
                         else -> {
-                            ws.close(CloseReason(4400, "Unexpected message"))
+                            ws.close(CloseReasons.UNEXPECTED_MESSAGE)
                             return@coroutineScope
                         }
                     }
                 }
             } catch (e: ClosedReceiveChannelException) {
                 // Closed more or less gracefully
-                subscriptions.values.forEach {
-                    it.cancelAndJoin()
-                }
             } catch (e: Throwable) {
                 // Closed much less gracefully
                 log.warn(e.message)
-                // FIXME probably a better way of cancelling our jobs
-                subscriptions.values.forEach {
-                    it.cancelAndJoin()
+                e.printStackTrace()
+            } finally {
+                subscriptions.values.apply {
+                    forEach(Job::cancel)
+                    joinAll()
                 }
             }
         }
