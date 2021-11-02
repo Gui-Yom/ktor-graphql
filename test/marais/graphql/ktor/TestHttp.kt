@@ -2,9 +2,7 @@ package marais.graphql.ktor
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.application.*
-import io.ktor.features.*
 import io.ktor.http.*
-import io.ktor.jackson.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
@@ -20,12 +18,7 @@ class TestHttp {
     fun testSimpleQuery() = withTestApplication({
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {
@@ -52,12 +45,7 @@ class TestHttp {
     fun testMultipleQueries() = withTestApplication({
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {
@@ -87,12 +75,7 @@ class TestHttp {
     fun testIntrospectionQuery() = withTestApplication({
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {
@@ -117,20 +100,13 @@ class TestHttp {
     fun testUnaccepted() = withTestApplication({
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {
             graphql("/graphql") {
                 // Nope
-                call.respond(object {
-                    val error = "Unauthorized"
-                })
+                call.respond("""{"error":"Unauthorized"}""")
                 null
             }
         }
@@ -151,12 +127,7 @@ class TestHttp {
     fun testGraphQLContext() = withTestApplication({
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {

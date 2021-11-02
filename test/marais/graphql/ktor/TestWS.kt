@@ -2,10 +2,7 @@ package marais.graphql.ktor
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
-import io.ktor.jackson.*
 import io.ktor.routing.*
 import io.ktor.server.testing.*
 import marais.graphql.ktor.data.GraphQLRequest
@@ -25,12 +22,7 @@ class TestWS {
 
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {
@@ -64,12 +56,7 @@ class TestWS {
 
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {
@@ -104,12 +91,7 @@ class TestWS {
 
         install(GraphQLEngine) {
             schema = testSchema
-        }
-
-        install(ContentNegotiation) {
-            jackson {
-                registerModule(KotlinModule())
-            }
+            mapper.registerModule(KotlinModule.Builder().build())
         }
 
         routing {

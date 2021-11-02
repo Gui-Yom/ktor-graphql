@@ -3,7 +3,6 @@ package marais.graphql.ktor
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
@@ -48,13 +47,15 @@ class GraphQLEngine(conf: Configuration) {
         }
 
         ctx.call.respond(
-            handleGraphQL(
-                GraphQLRequest(
-                    query,
-                    ctx.call.request.queryParameters["operationName"],
-                    variables
-                ),
-                gqlCtx
+            mapper.writeValueAsString(
+                handleGraphQL(
+                    GraphQLRequest(
+                        query,
+                        ctx.call.request.queryParameters["operationName"],
+                        variables
+                    ),
+                    gqlCtx
+                )
             )
         )
     }
@@ -63,16 +64,16 @@ class GraphQLEngine(conf: Configuration) {
         val json = ctx.call.receiveText()
         try {
             val request = mapper.readValue(json, GraphQLRequest::class.java)
-            ctx.call.respond(handleGraphQL(request, gqlCtx))
+            ctx.call.respond(mapper.writeValueAsString(handleGraphQL(request, gqlCtx)))
 
             // IMHO That is one terrible way of handling the case where we get an array of queries
             // But hey it works
         } catch (e: JsonMappingException) {
             val batch: Array<GraphQLRequest> = mapper.readerForArrayOf(GraphQLRequest::class.java).readValue(json)
             // Run all queries concurrently
-            ctx.call.respond(coroutineScope {
+            ctx.call.respond(mapper.writeValueAsString(coroutineScope {
                 batch.map { async { handleGraphQL(it, gqlCtx) } }
-            }.awaitAll())
+            }.awaitAll()))
         } catch (e: Exception) {
             // TODO meaningful messages
             // TODO json error messages
@@ -208,7 +209,6 @@ class GraphQLEngine(conf: Configuration) {
 
     class Configuration {
         var mapper: ObjectMapper = ObjectMapper()
-            .registerModule(KotlinModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         /**
