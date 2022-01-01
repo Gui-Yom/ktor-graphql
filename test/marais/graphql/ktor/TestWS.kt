@@ -1,10 +1,11 @@
 package marais.graphql.ktor
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.application.*
-import io.ktor.http.cio.websocket.*
-import io.ktor.routing.*
-import io.ktor.server.testing.*
+import io.ktor.application.install
+import io.ktor.http.cio.websocket.Frame
+import io.ktor.http.cio.websocket.readText
+import io.ktor.routing.routing
+import io.ktor.server.testing.withTestApplication
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
 import marais.graphql.ktor.data.Message
@@ -27,7 +28,7 @@ class TestWS {
 
         routing {
             graphqlWS("/graphql") {
-                "Yay !"
+                mapOf("extra" to "Yay !")
             }
         }
     }) {
@@ -61,7 +62,7 @@ class TestWS {
 
         routing {
             graphqlWS("/graphql") {
-                "Yay !"
+                mapOf("extra" to "Yay !")
             }
         }
     }) {
@@ -96,7 +97,7 @@ class TestWS {
 
         routing {
             graphqlWS("/graphql") {
-                "Yay !"
+                mapOf("extra" to "Yay !")
             }
         }
     }) {

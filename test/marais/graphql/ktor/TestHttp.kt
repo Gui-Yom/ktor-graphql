@@ -25,7 +25,7 @@ class TestHttp {
             graphql("/graphql") {
                 // Do something before handling graphql like authentication
                 println("yay ${this.context.request}")
-                "Yay !"
+                mapOf("extra" to "Yay !")
             }
         }
     }) {
@@ -52,7 +52,7 @@ class TestHttp {
             graphql("/graphql") {
                 // Do something before handling graphql like authentication
                 println("Req ID : ${this.context.request.header("x-req-id")}")
-                "Passed !"
+                mapOf("extra" to "Passed !")
             }
         }
     }) {
@@ -80,7 +80,7 @@ class TestHttp {
 
         routing {
             graphql("/graphql") {
-                "Yay"
+                mapOf("extra" to "Yay")
             }
         }
     }) {
@@ -133,7 +133,7 @@ class TestHttp {
         routing {
             graphql("/graphql") {
                 // Set the graphql context based on some header value
-                ContextObject(call.request.header("x-req-id")!!.toInt())
+                mapOf("x-req-id" to call.request.header("x-req-id")!!.toInt())
             }
         }
     }) {

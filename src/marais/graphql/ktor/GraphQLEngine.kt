@@ -6,18 +6,20 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.util.*
-import io.ktor.util.pipeline.*
-import io.ktor.websocket.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.ApplicationFeature
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.cio.websocket.close
+import io.ktor.request.receiveText
+import io.ktor.response.respond
+import io.ktor.util.AttributeKey
+import io.ktor.util.pipeline.PipelineContext
+import io.ktor.websocket.DefaultWebSocketServerSession
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.reactive.collect
 import marais.graphql.ktor.data.*
@@ -36,7 +38,7 @@ class GraphQLEngine(conf: Configuration) {
 
     private val log = LogManager.getLogger()
 
-    suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Any) {
+    suspend fun handleGet(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Map<*, Any>) {
         val query = ctx.call.request.queryParameters["query"]
         if (query == null) {
             ctx.call.respond(HttpStatusCode.BadRequest, "Missing 'query' parameter")
@@ -60,7 +62,7 @@ class GraphQLEngine(conf: Configuration) {
         )
     }
 
-    suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Any) {
+    suspend fun handlePost(ctx: PipelineContext<Unit, ApplicationCall>, gqlCtx: Map<*, Any>) {
         val json = ctx.call.receiveText()
         try {
             val request = mapper.readValue(json, GraphQLRequest::class.java)
@@ -81,7 +83,7 @@ class GraphQLEngine(conf: Configuration) {
         }
     }
 
-    suspend fun handleGraphQL(input: GraphQLRequest, context: Any): GraphQLResponse {
+    suspend fun handleGraphQL(input: GraphQLRequest, context: Map<*, Any>): GraphQLResponse {
         return try {
             graphql.executeAsync(input.toExecutionInput(context, dataLoaderRegistry)).await().toGraphQLResponse()
         } catch (exception: Exception) {
@@ -92,10 +94,8 @@ class GraphQLEngine(conf: Configuration) {
 
     suspend fun handleWebsocket(
         ws: DefaultWebSocketServerSession,
-        contextBuilder: suspend DefaultWebSocketServerSession.(Record?) -> Any?
+        contextBuilder: suspend DefaultWebSocketServerSession.(Record?) -> Map<*, Any>?
     ) {
-        var context: Any? = null
-
         // Receive connection init message
         // TODO configurable initial timeout
         val msg = withTimeoutOrNull(5000) {
@@ -107,15 +107,21 @@ class GraphQLEngine(conf: Configuration) {
         }
         when (msg) {
             is Message.ConnectionInit -> {
-                context = contextBuilder(ws, msg.payload)
+                val context = contextBuilder(ws, msg.payload) ?: return ws.close(CloseReasons.UNAUTHORIZED)
                 ws.sendMessage(mapper, Message.ConnectionAck(emptyMap()))
+                handleAcknowledgedWS(ws, context)
             }
             else -> {
                 ws.close(CloseReasons.UNAUTHORIZED)
                 return
             }
         }
+    }
 
+    private suspend fun handleAcknowledgedWS(
+        ws: DefaultWebSocketServerSession,
+        context: Map<*, Any>
+    ) {
         // This is scoped to a single connection
         val subscriptions = mutableMapOf<ID, Job>()
 

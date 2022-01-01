@@ -1,10 +1,15 @@
 package marais.graphql.ktor
 
-import io.ktor.application.*
+import graphql.GraphQLContext
+import io.ktor.application.ApplicationCall
+import io.ktor.application.feature
 import io.ktor.routing.*
-import io.ktor.util.pipeline.*
-import io.ktor.websocket.*
+import io.ktor.util.pipeline.ContextDsl
+import io.ktor.util.pipeline.PipelineContext
+import io.ktor.websocket.DefaultWebSocketServerSession
+import io.ktor.websocket.webSocket
 import marais.graphql.ktor.data.Record
+import java.util.function.Consumer
 
 /**
  * The handler should return a non null value indicating the request is accepted.
@@ -13,7 +18,7 @@ import marais.graphql.ktor.data.Record
 @ContextDsl
 fun Routing.graphql(
     path: String,
-    handler: suspend PipelineContext<Unit, ApplicationCall>.() -> Any?
+    handler: suspend PipelineContext<Unit, ApplicationCall>.() -> Map<*, Any>?
 ): Route {
     val gql = application.feature(GraphQLEngine)
 
@@ -37,7 +42,7 @@ fun Routing.graphql(
 @ContextDsl
 fun Routing.graphqlWS(
     path: String,
-    handler: suspend DefaultWebSocketServerSession.(Record?) -> Any
+    handler: suspend DefaultWebSocketServerSession.(Record?) -> Map<*, Any>?
 ) {
     val gql = application.feature(GraphQLEngine)
 

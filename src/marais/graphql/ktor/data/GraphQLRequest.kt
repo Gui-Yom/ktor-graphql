@@ -1,6 +1,7 @@
 package marais.graphql.ktor.data
 
 import graphql.ExecutionInput
+import graphql.GraphQLContext
 import org.dataloader.DataLoaderRegistry
 
 /**
@@ -17,17 +18,15 @@ data class GraphQLRequest(
      * Convert the common [GraphQLRequest] to the execution input used by graphql-java
      */
     fun toExecutionInput(
-        graphQLContext: Any? = null,
+        graphQLContext: Map<*, Any>,
         dataLoaderRegistry: DataLoaderRegistry? = null
     ): ExecutionInput {
         val builder = ExecutionInput.newExecutionInput()
             .query(this.query)
             .operationName(this.operationName)
+            .graphQLContext(graphQLContext)
             .variables(this.variables ?: emptyMap())
             .dataLoaderRegistry(dataLoaderRegistry ?: DataLoaderRegistry())
-        if (graphQLContext != null) {
-            builder.context(graphQLContext)
-        }
         return builder.build()
     }
 }

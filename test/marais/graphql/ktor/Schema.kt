@@ -6,13 +6,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import marais.graphql.dsl.GraphQLSchema
 
-data class ContextObject(val reqId: Int)
-
 object Query {
     fun number(): Int = 42
 
     fun envConsumer(env: DataFetchingEnvironment): Int {
-        return env.getContext<ContextObject>().reqId
+        return env.graphQlContext["x-req-id"]
     }
 }
 
