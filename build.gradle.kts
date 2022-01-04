@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm")
     `maven-publish`
-    signing
 }
 
 repositories {
@@ -123,10 +122,6 @@ publishing {
             }
         }
     }
-}
-
-signing {
-    sign(publishing.publications["root"])
 }
 
 fun RepositoryHandler.githubPackages(path: String) = maven {
