@@ -12,7 +12,11 @@ object Query {
     fun envConsumer(env: DataFetchingEnvironment): Int {
         return env.graphQlContext["x-req-id"]
     }
+
+    fun restrictedInfo() = RestrictedInfo("sensitive info")
 }
+
+class RestrictedInfo(val restrictedField: String)
 
 object Subscription {
     /**
@@ -29,4 +33,10 @@ object Subscription {
 internal val testSchema = GraphQLSchema {
     query(Query)
     subscription(Subscription)
+    type<RestrictedInfo> {
+        "restrictedField" { env: DataFetchingEnvironment ->
+            val secret = env.graphQlContext.getOrDefault<Int?>("secret", null)
+            if (secret == 42) restrictedField else null
+        }
+    }
 }

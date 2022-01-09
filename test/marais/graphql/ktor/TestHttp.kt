@@ -1,12 +1,15 @@
 package marais.graphql.ktor
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.server.testing.*
+import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.http.HttpMethod
+import io.ktor.request.header
+import io.ktor.response.respond
+import io.ktor.routing.routing
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.setBody
+import io.ktor.server.testing.withTestApplication
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
 import kotlin.test.Test
@@ -144,6 +147,55 @@ class TestHttp {
         }) {
             assertEquals(
                 mapper.writeValueAsString(GraphQLResponse(mapOf("envConsumer" to 1))),
+                response.content,
+                "Expected response"
+            )
+        }
+    }
+
+    @Test
+    fun testGraphQLContextInField() = withTestApplication({
+        install(GraphQLEngine) {
+            schema = testSchema
+            mapper.registerModule(KotlinModule.Builder().build())
+        }
+
+        routing {
+            graphql("/graphql") {
+                // Set the graphql context based on some header value
+                val secret = call.request.header("secret")?.toInt()
+                if (secret != null) mapOf("secret" to secret) else mapOf<Any, Any>()
+            }
+        }
+    }) {
+        with(handleRequest(HttpMethod.Post, "/graphql") {
+            val str = mapper.writeValueAsString(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
+            setBody(str)
+            addHeader("secret", "42")
+        }) {
+            assertEquals(
+                mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to "sensitive info")))),
+                response.content,
+                "Expected response"
+            )
+        }
+        with(handleRequest(HttpMethod.Post, "/graphql") {
+            val str = mapper.writeValueAsString(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
+            setBody(str)
+            addHeader("secret", "10")
+        }) {
+            assertEquals(
+                mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null)))),
+                response.content,
+                "Expected response"
+            )
+        }
+        with(handleRequest(HttpMethod.Post, "/graphql") {
+            val str = mapper.writeValueAsString(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
+            setBody(str)
+        }) {
+            assertEquals(
+                mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null)))),
                 response.content,
                 "Expected response"
             )
