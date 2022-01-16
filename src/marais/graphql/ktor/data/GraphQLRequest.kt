@@ -1,7 +1,6 @@
 package marais.graphql.ktor.data
 
 import graphql.ExecutionInput
-import graphql.GraphQLContext
 import org.dataloader.DataLoaderRegistry
 
 /**

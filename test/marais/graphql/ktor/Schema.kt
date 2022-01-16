@@ -1,10 +1,12 @@
 package marais.graphql.ktor
 
+import graphql.ErrorClassification
 import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import marais.graphql.dsl.GraphQLSchema
+import marais.graphql.ktor.data.GraphQLException
 
 object Query {
     fun number(): Int = 42
@@ -14,6 +16,14 @@ object Query {
     }
 
     fun restrictedInfo() = RestrictedInfo("sensitive info")
+
+    fun throwError(env: DataFetchingEnvironment): Boolean = throw FetchingError()
+}
+
+class FetchingError : GraphQLException("This is my fetching error", ExceptionCode.FETCHING_ERROR)
+
+enum class ExceptionCode : ErrorClassification {
+    FETCHING_ERROR
 }
 
 class RestrictedInfo(val restrictedField: String)

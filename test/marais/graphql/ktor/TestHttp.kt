@@ -14,6 +14,7 @@ import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TestHttp {
 
@@ -197,6 +198,35 @@ class TestHttp {
             assertEquals(
                 mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null)))),
                 response.content,
+                "Expected response"
+            )
+        }
+    }
+
+    @Test
+    fun testFetchingExceptions() = withTestApplication({
+        install(GraphQLEngine) {
+            schema = testSchema
+            mapper.registerModule(KotlinModule.Builder().build())
+            //TODO defaultExceptionStatusCode(FetchingError())
+            graphqlConfiguration = {
+                defaultDataFetcherExceptionHandler(CustomDataFetcherExceptionHandler())
+            }
+        }
+
+        routing {
+            graphql("/graphql") {
+                // Set the graphql context based on some header value
+                mapOf<Any, Any>()
+            }
+        }
+    }) {
+        with(handleRequest(HttpMethod.Post, "/graphql") {
+            val str = mapper.writeValueAsString(GraphQLRequest("query { throwError }"))
+            setBody(str)
+        }) {
+            assertTrue(
+                response.content?.contains("\"code\":\"${ExceptionCode.FETCHING_ERROR}\"") == true,
                 "Expected response"
             )
         }

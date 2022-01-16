@@ -1,7 +1,9 @@
 package marais.graphql.ktor
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.ktor.http.cio.websocket.*
+import io.ktor.http.cio.websocket.Frame
+import io.ktor.http.cio.websocket.WebSocketSession
+import io.ktor.http.cio.websocket.readText
 import marais.graphql.ktor.data.Message
 
 internal suspend fun WebSocketSession.sendMessage(mapper: ObjectMapper, msg: Message) {

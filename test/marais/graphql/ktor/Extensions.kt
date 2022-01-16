@@ -2,15 +2,27 @@ package marais.graphql.ktor
 
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
-import io.ktor.server.testing.*
+import io.ktor.http.HttpHeaders
+import io.ktor.http.cio.websocket.Frame
+import io.ktor.http.cio.websocket.readText
+import io.ktor.server.testing.TestApplicationCall
+import io.ktor.server.testing.TestApplicationEngine
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import marais.graphql.ktor.data.Message
 
-val mapper = ObjectMapper().registerModule(KotlinModule())
+val mapper: ObjectMapper = ObjectMapper().registerModule(
+    KotlinModule.Builder()
+        .withReflectionCacheSize(512)
+        .configure(KotlinFeature.NullToEmptyCollection, false)
+        .configure(KotlinFeature.NullToEmptyMap, false)
+        .configure(KotlinFeature.NullIsSameAsDefault, false)
+        .configure(KotlinFeature.SingletonSupport, false)
+        .configure(KotlinFeature.StrictNullChecks, false)
+        .build()
+)
 
 inline fun <reified T : Message> Frame.isMessage(): Boolean = this is Frame.Text &&
         try {

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import org.reactivestreams.Publisher
 
 /**
- * GraphQL response that is spec complaint with serialization and deserialization.
+ * GraphQL Response that is spec complaint with serialization and deserialization.
  *
  * @see [GraphQL Specification](http://spec.graphql.org/June2018/#sec-Data) for additional details
  */

@@ -87,8 +87,7 @@ class GraphQLEngine(conf: Configuration) {
         return try {
             graphql.executeAsync(input.toExecutionInput(context, dataLoaderRegistry)).await().toGraphQLResponse()
         } catch (exception: Exception) {
-            val graphKotlinQLError = KotlinGraphQLError(exception)
-            GraphQLResponse(errors = listOf(graphKotlinQLError.toGraphQLKotlinType()))
+            GraphQLResponse(errors = listOf(exception.toGraphQlError()))
         }
     }
 
