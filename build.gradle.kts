@@ -37,12 +37,12 @@ dependencies {
     // Ktor main
     implementation(platform("io.ktor:ktor-bom:$ktorVersion"))
     api("io.ktor:ktor-server-core")
-    api("io.ktor:ktor-websockets")
+    compileOnly("io.ktor:ktor-server-websockets")
 
     // Serialization
     implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    api("com.fasterxml.jackson.core:jackson-databind")
+    api("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     // GraphQL
     api("com.graphql-java:graphql-java:$gqlVersion")
@@ -51,7 +51,10 @@ dependencies {
         exclude("ch.qos.logback")
     }
     testImplementation(kotlin("test-junit5"))
-    testImplementation("io.ktor:ktor-jackson")
+    testImplementation("io.ktor:ktor-client-websockets")
+    testImplementation("io.ktor:ktor-server-content-negotiation")
+    testImplementation("io.ktor:ktor-client-content-negotiation")
+    testImplementation("io.ktor:ktor-serialization-jackson")
     testRuntimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
     testImplementation("marais.graphql:graphql-dsl:$gqlDslVersion")
@@ -75,14 +78,14 @@ kotlin {
 }
 
 java {
-    targetCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
 }
 
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_11.toString()
+            jvmTarget = JavaVersion.VERSION_17.toString()
         }
     }
 

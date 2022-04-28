@@ -1,6 +1,7 @@
 package marais.graphql.ktor
 
 import graphql.ErrorClassification
+import graphql.GraphQLContext
 import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -11,8 +12,8 @@ import marais.graphql.ktor.data.GraphQLException
 object Query {
     fun number(): Int = 42
 
-    fun envConsumer(env: DataFetchingEnvironment): Int {
-        return env.graphQlContext["x-req-id"]
+    fun envConsumer(ctx: GraphQLContext): Int {
+        return ctx["x-req-id"]
     }
 
     fun restrictedInfo() = RestrictedInfo("sensitive info")
@@ -44,8 +45,8 @@ internal val testSchema = GraphQLSchema {
     query(Query)
     subscription(Subscription)
     type<RestrictedInfo> {
-        "restrictedField" { env: DataFetchingEnvironment ->
-            val secret = env.graphQlContext.getOrDefault<Int?>("secret", null)
+        "restrictedField" { ctx: GraphQLContext ->
+            val secret = ctx.get<Int>("secret")
             if (secret == 42) restrictedField else null
         }
     }

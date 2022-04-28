@@ -1,15 +1,17 @@
 package marais.graphql.ktor
 
-import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.http.HttpMethod
-import io.ktor.request.header
-import io.ktor.response.respond
-import io.ktor.routing.routing
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.setBody
-import io.ktor.server.testing.withTestApplication
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.testing.*
+import io.ktor.server.websocket.*
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
 import kotlin.test.Test
@@ -19,216 +21,164 @@ import kotlin.test.assertTrue
 class TestHttp {
 
     @Test
-    fun testSimpleQuery() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
+    fun testSimpleQuery() = testApplication {
+        testAppModule()
+        routing {
+            graphql()
         }
 
-        routing {
-            graphql("/graphql") {
-                // Do something before handling graphql like authentication
-                println("yay ${this.context.request}")
-                mapOf("extra" to "Yay !")
-            }
+        val res = testClient().post("/graphql") {
+            setBody(GraphQLRequest("query { number }"))
         }
-    }) {
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { number }"))
-            setBody(str)
-        }) {
-            assertEquals(
-                mapper.writeValueAsString(GraphQLResponse(mapOf("number" to 42))),
-                response.content,
-                "Expected response"
-            )
-        }
+        assertEquals(GraphQLResponse(mapOf("number" to 42)), res.body(), "Expected response")
     }
 
     @Test
-    fun testMultipleQueries() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
-        }
-
+    fun testMultipleQueries() = testApplication {
+        testAppModule()
         routing {
-            graphql("/graphql") {
+            graphql {
                 // Do something before handling graphql like authentication
-                println("Req ID : ${this.context.request.header("x-req-id")}")
+                println("Req ID : ${it.call.request.header("x-req-id")}")
                 mapOf("extra" to "Passed !")
             }
         }
-    }) {
+        val client = testClient()
+
         for (i in 0..10) {
-            with(handleRequest(HttpMethod.Post, "/graphql") {
-                addHeader("x-req-id", i.toString())
-                val str = mapper.writeValueAsString(GraphQLRequest("query { number }"))
-                setBody(str)
-            }) {
-                assertEquals(
-                    mapper.writeValueAsString(GraphQLResponse(mapOf("number" to 42))),
-                    response.content,
-                    "Expected response"
-                )
+            val res = client.post("/graphql") {
+                header("x-req-id", i.toString())
+                setBody(GraphQLRequest("query { number }"))
             }
+            assertEquals(GraphQLResponse(mapOf("number" to 42)), res.body(), "Expected response")
         }
     }
 
     @Test
-    fun testIntrospectionQuery() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
-        }
-
+    fun testIntrospectionQuery() = testApplication {
+        testAppModule()
         routing {
-            graphql("/graphql") {
-                mapOf("extra" to "Yay")
-            }
+            graphql()
         }
-    }) {
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(
+        val client = testClient()
+
+        val response = client.post("/graphql") {
+            setBody(
                 GraphQLRequest(
                     "query IntrospectionQuery { __schema { queryType { name } mutationType { name } subscriptionType { name } types { ...FullType } directives { name description locations args { ...InputValue          }        }      }    }    fragment FullType on __Type { kind name description fields(includeDeprecated: true) { name description args {          ...InputValue        }        type {          ...TypeRef        }        isDeprecated        deprecationReason      }      inputFields {        ...InputValue      }      interfaces {        ...TypeRef      }      enumValues(includeDeprecated: true) {        name        description        isDeprecated        deprecationReason      }      possibleTypes {        ...TypeRef      }    }    fragment InputValue on __InputValue {      name      description      type { ...TypeRef }      defaultValue    }    fragment TypeRef on __Type {      kind      name      ofType {        kind        name        ofType {          kind          name          ofType {            kind            name            ofType {              kind              name              ofType {                kind                name                ofType {                  kind                  name                  ofType {                    kind                    name                  }                }              }            }          }        }      }    }"
                 )
             )
-            setBody(str)
-        }) {
-            println(response.content)
         }
+        println(response.bodyAsText())
     }
 
     @Test
-    fun testUnaccepted() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
-        }
-
+    fun testUnaccepted() = testApplication {
+        testAppModule()
         routing {
-            graphql("/graphql") {
+            graphql {
                 // Nope
-                call.respond("""{"error":"Unauthorized"}""")
-                null
+                it.call.respond("""{"error":"Unauthorized"}""");
             }
         }
-    }) {
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { number }"))
-            setBody(str)
-        }) {
-            assertEquals(
-                """{"error":"Unauthorized"}""",
-                response.content,
-                "Expected response"
-            )
+        val client = testClient()
+
+        val res = client.post("/graphql") {
+            setBody(GraphQLRequest("query { number }"))
         }
+        assertEquals("""{"error":"Unauthorized"}""", res.bodyAsText(), "Expected response")
     }
 
     @Test
-    fun testGraphQLContext() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
-        }
-
+    fun testGraphQLContext() = testApplication {
+        testAppModule()
         routing {
-            graphql("/graphql") {
+            graphql {
                 // Set the graphql context based on some header value
-                mapOf("x-req-id" to call.request.header("x-req-id")!!.toInt())
+                graphQLContext(mapOf("x-req-id" to it.call.request.header("x-req-id")!!.toInt()))
             }
         }
-    }) {
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { envConsumer }"))
-            setBody(str)
-            addHeader("x-req-id", "1")
-        }) {
-            assertEquals(
-                mapper.writeValueAsString(GraphQLResponse(mapOf("envConsumer" to 1))),
-                response.content,
-                "Expected response"
-            )
+        val client = testClient()
+
+        val res = client.post("/graphql") {
+            header("x-req-id", "1")
+            setBody(GraphQLRequest("query { envConsumer }"))
         }
+
+        assertEquals(GraphQLResponse(mapOf("envConsumer" to 1)), res.body(), "Expected response")
     }
 
     @Test
-    fun testGraphQLContextInField() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
-        }
-
+    fun testGraphQLContextInField() = testApplication {
+        testAppModule()
         routing {
-            graphql("/graphql") {
+            graphql {
                 // Set the graphql context based on some header value
-                val secret = call.request.header("secret")?.toInt()
-                if (secret != null) mapOf("secret" to secret) else mapOf<Any, Any>()
+                val secret = it.call.request.header("secret")?.toInt()
+                graphQLContext(if (secret != null) mapOf("secret" to secret) else mapOf<Any, Any>())
             }
         }
-    }) {
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
-            setBody(str)
-            addHeader("secret", "42")
-        }) {
-            assertEquals(
-                mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to "sensitive info")))),
-                response.content,
-                "Expected response"
-            )
+        val client = testClient()
+
+        val res = client.post("/graphql") {
+            setBody(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
+            header("secret", "42")
         }
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
-            setBody(str)
-            addHeader("secret", "10")
-        }) {
-            assertEquals(
-                mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null)))),
-                response.content,
-                "Expected response"
-            )
+        assertEquals(
+            GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to "sensitive info"))),
+            res.body(),
+            "Expected response"
+        )
+        val res2 = client.post("/graphql") {
+            setBody(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
+            header("secret", "10")
         }
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
-            setBody(str)
-        }) {
-            assertEquals(
-                mapper.writeValueAsString(GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null)))),
-                response.content,
-                "Expected response"
-            )
+        assertEquals(
+            GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null))),
+            res2.body(),
+            "Expected response"
+        )
+        val res3 = client.post("/graphql") {
+            setBody(GraphQLRequest("query { restrictedInfo { restrictedField } }"))
         }
+        assertEquals(
+            GraphQLResponse(mapOf("restrictedInfo" to mapOf("restrictedField" to null))),
+            res3.body(),
+            "Expected response"
+        )
     }
 
     @Test
-    fun testFetchingExceptions() = withTestApplication({
-        install(GraphQLEngine) {
-            schema = testSchema
-            mapper.registerModule(KotlinModule.Builder().build())
-            //TODO defaultExceptionStatusCode(FetchingError())
-            graphqlConfiguration = {
-                defaultDataFetcherExceptionHandler(CustomDataFetcherExceptionHandler())
+    fun testFetchingExceptions() = testApplication {
+        application {
+            install(ContentNegotiation) {
+                jackson()
+            }
+
+            install(WebSockets) {
+                contentConverter = JacksonWebsocketContentConverter()
+            }
+
+            install(GraphQLPlugin) {
+                graphql(testSchema) {
+                    //TODO defaultExceptionStatusCode(FetchingError())
+                    defaultDataFetcherExceptionHandler(CustomDataFetcherExceptionHandler())
+                }
+            }
+
+            routing {
+                graphql("/graphql") {
+                    // Set the graphql context based on some header value
+                    mapOf<Any, Any>()
+                }
             }
         }
 
-        routing {
-            graphql("/graphql") {
-                // Set the graphql context based on some header value
-                mapOf<Any, Any>()
-            }
+        val client = testClient()
+
+        val res = client.post("/graphql") {
+            setBody(GraphQLRequest("query { throwError }"))
         }
-    }) {
-        with(handleRequest(HttpMethod.Post, "/graphql") {
-            val str = mapper.writeValueAsString(GraphQLRequest("query { throwError }"))
-            setBody(str)
-        }) {
-            assertTrue(
-                response.content?.contains("\"code\":\"${ExceptionCode.FETCHING_ERROR}\"") == true,
-                "Expected response"
-            )
-        }
+        assertTrue(res.bodyAsText().contains("\"code\":\"${ExceptionCode.FETCHING_ERROR}\""), "Expected response")
     }
 }

@@ -2,7 +2,7 @@ package marais.graphql.ktor.data
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.ktor.http.cio.websocket.*
+import io.ktor.websocket.*
 
 /*
 Websocket messages as per the spec : https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md

@@ -1,7 +1,6 @@
 package marais.graphql.ktor.data
 
 import graphql.ExecutionInput
-import org.dataloader.DataLoaderRegistry
 
 /**
  * GraphQL request that follows the common GraphQL HTTP request format and works with serialization and deserialization.
@@ -16,16 +15,10 @@ data class GraphQLRequest(
     /**
      * Convert the common [GraphQLRequest] to the execution input used by graphql-java
      */
-    fun toExecutionInput(
-        graphQLContext: Map<*, Any>,
-        dataLoaderRegistry: DataLoaderRegistry? = null
-    ): ExecutionInput {
-        val builder = ExecutionInput.newExecutionInput()
+    fun toExecutionInput(): ExecutionInput.Builder {
+        return ExecutionInput.newExecutionInput()
             .query(this.query)
             .operationName(this.operationName)
-            .graphQLContext(graphQLContext)
             .variables(this.variables ?: emptyMap())
-            .dataLoaderRegistry(dataLoaderRegistry ?: DataLoaderRegistry())
-        return builder.build()
     }
 }
