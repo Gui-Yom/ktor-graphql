@@ -5,8 +5,8 @@ plugins {
 
 repositories {
     mavenLocal()
-    githubPackages("Gui-Yom/graphql-dsl")
     mavenCentral()
+    githubPackages("Gui-Yom/graphql-dsl")
 }
 
 val ktorVersion: String by project

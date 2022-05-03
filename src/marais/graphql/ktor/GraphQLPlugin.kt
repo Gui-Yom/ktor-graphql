@@ -86,7 +86,7 @@ class GraphQLPlugin(conf: Configuration) {
         }
     }
 
-    private suspend fun handleGraphQL(
+    suspend fun handleGraphQL(
         input: ExecutionInput
     ): GraphQLResponse {
         return try {

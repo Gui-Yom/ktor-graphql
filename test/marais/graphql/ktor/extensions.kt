@@ -33,7 +33,7 @@ fun ApplicationTestBuilder.testAppModule() = application {
     }
 
     install(WebSockets) {
-        contentConverter = JacksonWebsocketContentConverter(mapper)
+        contentConverter = JacksonContentConverter(mapper)
     }
 
     install(GraphQLPlugin) {
@@ -47,7 +47,7 @@ fun ApplicationTestBuilder.testClient() = createClient {
     }
 
     install(io.ktor.client.plugins.websocket.WebSockets) {
-        contentConverter = JacksonWebsocketContentConverter(mapper)
+        contentConverter = JacksonContentConverter(mapper)
     }
 
     defaultRequest {

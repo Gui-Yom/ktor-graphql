@@ -2,10 +2,8 @@ package marais.graphql.ktor
 
 import io.ktor.client.plugins.websocket.*
 import io.ktor.server.testing.*
-import io.ktor.util.*
-import io.ktor.util.reflect.*
-import io.ktor.utils.io.charsets.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
 import marais.graphql.ktor.data.Message
@@ -62,7 +60,6 @@ class TestWS {
         }
 
         graphqlWSSession {
-            println(converter?.serialize(Charset.defaultCharset(), typeInfo<Message>(), Message.ConnectionInit())?.buffer?.decodeString())
             sendSerialized<Message>(Message.ConnectionInit())
             receiveDeserialized<Message.ConnectionAck>()
             sendSerialized<Message>(Message.Ping())
@@ -82,9 +79,11 @@ class TestWS {
 
         graphqlWSSession {
             sendSerialized<Message>(Message.ConnectionInit())
-            receiveDeserialized<Message.ConnectionAck>()
-            sendSerialized<Message>(Message.Ping())
-            receiveDeserialized<Message.Pong>()
+            try {
+                incoming.receive()
+            } catch (e: ClosedReceiveChannelException) {
+                println("Unauthorized")
+            }
         }
     }
 }
