@@ -1,5 +1,7 @@
 # ktor-graphql
 
+A Ktor plugin exposing a graphql engine to http and websockets.
+
 ## Features
 
 ### GraphQL ktor plugin
@@ -21,7 +23,19 @@ jackson directly.
 Also, `kotlinx.serialization` is unsupported as a ktor content serializer since it can't de|serialize dynamic content
 like `Map<String, Any>`.
 
-#### Example
+## Installation
+
+Artifacts are published to Github Packages and Maven Central. With Gradle :
+
+```kotlin
+dependencies {
+    implementation("io.github.gui-yom:ktor-graphql:0.8.0")
+}
+```
+
+Those artifacts are built with jdk 17.
+
+## Example
 
 Example usage with http methods (no subscriptions) and websockets :
 

@@ -13,9 +13,8 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.testing.*
 import io.ktor.server.websocket.WebSockets
-import io.ktor.util.*
 
-val mapper: ObjectMapper = ObjectMapper()
+val MAPPER: ObjectMapper = ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .registerModule(
         KotlinModule.Builder()
@@ -33,10 +32,11 @@ fun ApplicationTestBuilder.testAppModule() = application {
     }
 
     install(WebSockets) {
-        contentConverter = JacksonContentConverter(mapper)
+        contentConverter = JacksonContentConverter(MAPPER)
     }
 
     install(GraphQLPlugin) {
+        mapper = MAPPER
         graphql(testSchema)
     }
 }
@@ -47,11 +47,12 @@ fun ApplicationTestBuilder.testClient() = createClient {
     }
 
     install(io.ktor.client.plugins.websocket.WebSockets) {
-        contentConverter = JacksonContentConverter(mapper)
+        contentConverter = JacksonContentConverter(MAPPER)
     }
 
     defaultRequest {
-        headers.appendIfNameAbsent(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+        contentType(ContentType.Application.Json)
+        accept(ContentType.Application.Json)
     }
 }
 

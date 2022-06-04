@@ -11,12 +11,12 @@ class TestMessages {
         val msg: Message = Message.ConnectionInit(emptyMap())
         assertEquals(
             "{\"type\":\"connection_init\",\"payload\":{}}",
-            mapper.writeValueAsString(msg),
+            MAPPER.writeValueAsString(msg),
             "Polymorphic serialization"
         )
         assertEquals(
             msg,
-            mapper.readValue("{\"type\":\"connection_init\",\"payload\":{}}", Message::class.java),
+            MAPPER.readValue("{\"type\":\"connection_init\",\"payload\":{}}", Message::class.java),
             "Polymorphic deserialization"
         )
     }
