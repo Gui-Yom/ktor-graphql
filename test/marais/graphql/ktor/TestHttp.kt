@@ -1,17 +1,20 @@
 package marais.graphql.ktor
 
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.jackson.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.testing.*
-import io.ktor.server.websocket.*
+import io.ktor.client.call.body
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.serialization.jackson.JacksonWebsocketContentConverter
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.routing
+import io.ktor.server.testing.testApplication
+import io.ktor.server.websocket.WebSockets
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse
 import kotlin.test.Test
@@ -31,6 +34,25 @@ class TestHttp {
             setBody(GraphQLRequest("query { number }"))
         }
         assertEquals(GraphQLResponse(mapOf("number" to 42)), res.body(), "Expected response")
+    }
+
+    @Test
+    fun testQueryWithVariable() = testApplication {
+        testAppModule()
+        routing {
+            graphql()
+        }
+
+        val res = testClient().post("/graphql") {
+            setBody(
+                GraphQLRequest(
+                    "query withVar(\$var: String!) { boomerang(value: \$var) }",
+                    "withVar",
+                    variables = mapOf("var" to "42")
+                )
+            )
+        }
+        assertEquals(GraphQLResponse(mapOf("boomerang" to "42")), res.body(), "Expected response")
     }
 
     @Test
@@ -86,7 +108,7 @@ class TestHttp {
         val res = client.post("/graphql") {
             setBody(GraphQLRequest("query { number }"))
         }
-        assertEquals("""{"error":"Unauthorized"}""", res.bodyAsText(), "Expected response")
+        assertEquals("""{"error":"Unauthorized"}""", res.body(), "Expected response")
     }
 
     @Test

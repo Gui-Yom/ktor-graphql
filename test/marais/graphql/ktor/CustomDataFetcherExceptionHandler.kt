@@ -9,6 +9,7 @@ import graphql.util.LogKit
 import marais.graphql.ktor.data.GraphQLException
 import java.lang.reflect.InvocationTargetException
 import java.time.ZonedDateTime
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 
 /**
@@ -18,7 +19,7 @@ class CustomDataFetcherExceptionHandler : DataFetcherExceptionHandler {
 
     private val logNotSafe = LogKit.getNotPrivacySafeLogger(SimpleDataFetcherExceptionHandler::class.java)
 
-    override fun onException(handlerParameters: DataFetcherExceptionHandlerParameters): DataFetcherExceptionHandlerResult {
+    override fun handleException(handlerParameters: DataFetcherExceptionHandlerParameters): CompletableFuture<DataFetcherExceptionHandlerResult> {
         val exception = unwrap(handlerParameters.exception)
         val sourceLocation = handlerParameters.sourceLocation
         val path = handlerParameters.path
@@ -32,7 +33,7 @@ class CustomDataFetcherExceptionHandler : DataFetcherExceptionHandler {
         } else ExceptionWhileDataFetching(path, exception, sourceLocation)
         logNotSafe.warn(error.message, exception)
 
-        return DataFetcherExceptionHandlerResult.newResult().error(error).build()
+        return CompletableFuture.completedFuture(DataFetcherExceptionHandlerResult.newResult().error(error).build())
     }
 
     private fun unwrap(exception: Throwable): Throwable? {

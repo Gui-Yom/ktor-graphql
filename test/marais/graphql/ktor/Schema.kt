@@ -18,6 +18,8 @@ object Query {
 
     fun restrictedInfo() = RestrictedInfo("sensitive info")
 
+    fun boomerang(value: String) = value
+
     fun throwError(env: DataFetchingEnvironment): Boolean = throw FetchingError()
 }
 

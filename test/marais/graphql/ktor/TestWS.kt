@@ -1,8 +1,9 @@
 package marais.graphql.ktor
 
-import io.ktor.client.plugins.websocket.*
-import io.ktor.server.testing.*
-import io.ktor.websocket.*
+import io.ktor.client.plugins.websocket.receiveDeserialized
+import io.ktor.client.plugins.websocket.sendSerialized
+import io.ktor.server.testing.testApplication
+import io.ktor.websocket.close
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import marais.graphql.ktor.data.GraphQLRequest
 import marais.graphql.ktor.data.GraphQLResponse

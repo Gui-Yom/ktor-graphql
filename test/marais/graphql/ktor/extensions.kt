@@ -4,14 +4,19 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.jackson.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.testing.*
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.accept
+import io.ktor.client.request.header
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.serialization.jackson.JacksonWebsocketContentConverter
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.install
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.websocket.WebSockets
 
 val MAPPER: ObjectMapper = ObjectMapper()
@@ -32,7 +37,7 @@ fun ApplicationTestBuilder.testAppModule() = application {
     }
 
     install(WebSockets) {
-        contentConverter = JacksonContentConverter(MAPPER)
+        contentConverter = JacksonWebsocketContentConverter()
     }
 
     install(GraphQLPlugin) {
@@ -47,7 +52,7 @@ fun ApplicationTestBuilder.testClient() = createClient {
     }
 
     install(io.ktor.client.plugins.websocket.WebSockets) {
-        contentConverter = JacksonContentConverter(MAPPER)
+        contentConverter = JacksonWebsocketContentConverter()
     }
 
     defaultRequest {
