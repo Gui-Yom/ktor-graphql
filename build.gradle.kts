@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm")
     `maven-publish`
-    signing
 }
 
 repositories {
@@ -151,8 +150,4 @@ fun RepositoryHandler.githubPackages(path: String) = maven {
         username = project.findProperty("MERCURI_GITHUB_USERNAME") as String? ?: System.getenv("USERNAME")
         password = project.findProperty("MERCURI_PACKAGE_READER_TOKEN") as String? ?: System.getenv("TOKEN")
     }
-}
-
-signing {
-    sign(publishing.publications["root"])
 }
