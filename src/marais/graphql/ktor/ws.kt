@@ -1,25 +1,38 @@
 package marais.graphql.ktor
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import graphql.ExecutionInput
 import graphql.ExecutionResult
-import io.ktor.server.application.*
-import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.util.*
-import io.ktor.util.reflect.*
-import io.ktor.utils.io.charsets.*
-import io.ktor.utils.io.core.*
-import io.ktor.websocket.*
-import kotlinx.coroutines.*
+import io.ktor.server.application.plugin
+import io.ktor.server.routing.Routing
+import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.server.websocket.receiveDeserialized
+import io.ktor.server.websocket.sendSerialized
+import io.ktor.server.websocket.webSocket
+import io.ktor.util.KtorDsl
+import io.ktor.websocket.close
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.collect
-import marais.graphql.ktor.data.*
+import kotlinx.coroutines.withTimeoutOrNull
+import marais.graphql.ktor.data.CloseReasons
+import marais.graphql.ktor.data.ID
+import marais.graphql.ktor.data.Message
+import marais.graphql.ktor.data.Record
+import marais.graphql.ktor.data.isFlow
+import marais.graphql.ktor.data.isPublisher
+import marais.graphql.ktor.data.toGraphQLResponse
 import org.reactivestreams.Publisher
-import java.nio.charset.Charset
-import kotlin.text.charset
+import kotlin.collections.contains
+import kotlin.collections.emptyMap
+import kotlin.collections.forEach
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
 
 /**
  * @param path the path to listen on for websocket connections
@@ -47,6 +60,7 @@ fun Routing.graphqlWS(
                     sendSerialized<Message>(Message.ConnectionAck(emptyMap()))
                     handleSession(gql, builder)
                 }
+
                 else -> {
                     close(CloseReasons.UNAUTHORIZED)
                 }
@@ -117,9 +131,11 @@ private suspend fun DefaultWebSocketServerSession.handleSession(
                         close(CloseReasons.ALREADY_INIT)
                         return@coroutineScope
                     }
+
                     is Message.Ping -> {
                         sendSerialized<Message>(Message.Pong())
                     }
+
                     is Message.Pong -> {
                         // Nothing
                     }
