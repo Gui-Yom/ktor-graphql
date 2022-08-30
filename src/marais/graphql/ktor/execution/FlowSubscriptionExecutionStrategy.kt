@@ -3,7 +3,17 @@ package marais.graphql.ktor.execution
 import graphql.AssertException
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
-import graphql.execution.*
+import graphql.execution.DataFetcherExceptionHandler
+import graphql.execution.ExecutionContext
+import graphql.execution.ExecutionContextBuilder
+import graphql.execution.ExecutionStepInfo
+import graphql.execution.ExecutionStrategy
+import graphql.execution.ExecutionStrategyParameters
+import graphql.execution.FetchedValue
+import graphql.execution.SimpleDataFetcherExceptionHandler
+import graphql.execution.SubscriptionExecutionStrategy
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
+import graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
@@ -34,7 +44,12 @@ class FlowSubscriptionExecutionStrategy(dataFetcherExceptionHandler: DataFetcher
     ): CompletableFuture<ExecutionResult>? {
         val instrumentation = executionContext.instrumentation
         val instrumentationParameters = InstrumentationExecutionStrategyParameters(executionContext, parameters)
-        val executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters)
+        val executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(
+            instrumentation.beginExecutionStrategy(
+                instrumentationParameters,
+                executionContext.instrumentationState
+            )
+        )
 
         val newParameters = firstFieldOfSubscriptionSelection(parameters)
         val fieldFetched = fetchField(executionContext, newParameters)
@@ -57,6 +72,7 @@ class FlowSubscriptionExecutionStrategy(dataFetcherExceptionHandler: DataFetcher
                         )
                     }
                 }
+
                 else -> throw AssertException(
                     """
                     This subscription execution strategy support the following return types for your subscriptions fetchers :
@@ -87,26 +103,26 @@ class FlowSubscriptionExecutionStrategy(dataFetcherExceptionHandler: DataFetcher
     ): CompletableFuture<ExecutionResult> {
         val instrumentation = executionContext.instrumentation
         val newExecutionContext = executionContext.transform { builder: ExecutionContextBuilder ->
-            builder
-                .root(eventPayload)
-                .resetErrors()
+            builder.root(eventPayload).resetErrors()
         }
         val newParameters = firstFieldOfSubscriptionSelection(parameters)
         val subscribedFieldStepInfo = createSubscribedFieldStepInfo(executionContext, newParameters)
-        val i13nFieldParameters = InstrumentationFieldParameters(
-            executionContext
-        ) { subscribedFieldStepInfo }
-        val subscribedFieldCtx = instrumentation.beginSubscribedFieldEvent(i13nFieldParameters)
+        val i13nFieldParameters = InstrumentationFieldParameters(executionContext) { subscribedFieldStepInfo }
+        val subscribedFieldCtx =
+            nonNullCtx(
+                instrumentation.beginSubscribedFieldEvent(
+                    i13nFieldParameters,
+                    executionContext.instrumentationState
+                )
+            )
         val fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload)
         val fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue)
-        var overallResult = fieldValueInfo
-            .fieldValue
-            .thenApply { executionResult: ExecutionResult ->
-                wrapWithRootFieldName(
-                    newParameters,
-                    executionResult
-                )
-            }
+        var overallResult = fieldValueInfo.fieldValue.thenApply { executionResult: ExecutionResult ->
+            wrapWithRootFieldName(
+                newParameters,
+                executionResult
+            )
+        }
 
         // dispatch instrumentation so they can know about each subscription event
         subscribedFieldCtx.onDispatched(overallResult)
@@ -124,7 +140,8 @@ class FlowSubscriptionExecutionStrategy(dataFetcherExceptionHandler: DataFetcher
         overallResult = overallResult.thenCompose { executionResult: ExecutionResult? ->
             instrumentation.instrumentExecutionResult(
                 executionResult,
-                i13nExecutionParameters
+                i13nExecutionParameters,
+                executionContext.instrumentationState
             )
         }
         return overallResult

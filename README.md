@@ -33,7 +33,7 @@ dependencies {
 }
 ```
 
-Those artifacts are built with jdk 17.
+Those artifacts are built with jdk 18.
 
 ## Example
 

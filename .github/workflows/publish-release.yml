@@ -14,13 +14,13 @@ jobs:
 
       - uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: 'liberica'
+          java-version: '18'
 
       - uses: burrunan/gradle-cache-action@v1
         name: Publish ktor-graphql
         with:
-          job-id: jdk17
+          job-id: jdk18
           arguments: publishAllPublicationsToGitHubPackagesRepository
           gradle-version: wrapper
         env:

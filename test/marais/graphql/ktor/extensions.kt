@@ -31,18 +31,24 @@ val MAPPER: ObjectMapper = ObjectMapper()
             .configure(KotlinFeature.StrictNullChecks, false).build()
     )
 
-fun ApplicationTestBuilder.testAppModule() = application {
-    install(ContentNegotiation) {
-        jackson()
+fun ApplicationTestBuilder.testAppModule() {
+    environment {
+        developmentMode = false
     }
 
-    install(WebSockets) {
-        contentConverter = JacksonWebsocketContentConverter()
-    }
+    application {
+        install(ContentNegotiation) {
+            jackson()
+        }
 
-    install(GraphQLPlugin) {
-        mapper = MAPPER
-        graphql(testSchema)
+        install(WebSockets) {
+            contentConverter = JacksonWebsocketContentConverter()
+        }
+
+        install(GraphQLPlugin) {
+            mapper = MAPPER
+            graphql(testSchema)
+        }
     }
 }
 

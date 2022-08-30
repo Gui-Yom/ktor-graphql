@@ -20,13 +20,9 @@ val jacksonVersion: String by project
 dependencies {
     // Kotlin
     implementation(platform(kotlin("bom", kotlinVersion)))
-    implementation(kotlin("stdlib-jdk8"))
-    //implementation(kotlin("reflect"))
 
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
     implementation("org.reactivestreams:reactive-streams:$reactiveVersion")
 
@@ -77,14 +73,14 @@ kotlin {
 }
 
 java {
-    targetCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_18
     withSourcesJar()
 }
 
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_17.toString()
+            jvmTarget = JavaVersion.VERSION_18.toString()
         }
     }
 
